@@ -23,12 +23,14 @@ const defaultContext: AppStateContextType = {
   events: [],
   leads: SEEDED_DEMO_LEADS,
   testRides: [],
+  latestTestRide: null,
   setCurrentCustomer: () => {},
   updateQuizAnswers: () => {},
   setRiderProfile: () => {},
   setLeadScore: () => {},
   logEvent: () => {},
-  addTestRide: () => {},
+  addTestRide: () => ({} as TestRideBooking),
+  updateTestRide: () => {},
   addLead: () => {},
   updateLead: () => {},
   resetToDefault: () => {},
@@ -80,6 +82,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       experienceCenter: 'Ather Space, Nungambakkam [VERIFIED ATHER PRODUCT DATA REQUIRED]',
     },
   ]);
+  const [latestTestRide, setLatestTestRide] = useState<TestRideBooking | null>(null);
 
   const updateQuizAnswers = useCallback((newAnswers: Partial<QuizAnswers>) => {
     setQuizAnswers((prev) => ({ ...prev, ...newAnswers }));
@@ -96,14 +99,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEvents((prev) => [newEvt, ...prev].slice(0, 100)); // retain last 100 events
   }, []);
 
-  const addTestRide = useCallback((rideData: Omit<TestRideBooking, 'id'>) => {
+  const addTestRide = useCallback((rideData: Omit<TestRideBooking, 'id'>): TestRideBooking => {
     const newRide: TestRideBooking = {
       ...rideData,
       id: `tr-${Date.now()}`,
     };
     setTestRides((prev) => [newRide, ...prev]);
+    setLatestTestRide(newRide);
     logEvent('TEST_RIDE_BOOKED', '/test-ride', { bookingId: newRide.id, city: newRide.city });
+    return newRide;
   }, [logEvent]);
+
+  const updateTestRide = useCallback((id: string, updates: Partial<TestRideBooking>) => {
+    setTestRides((prev) =>
+      prev.map((ride) => (ride.id === id ? { ...ride, ...updates } : ride))
+    );
+    setLatestTestRide((prev) => (prev && prev.id === id ? { ...prev, ...updates } : prev));
+  }, []);
 
   const addLead = useCallback((newLead: DemoLead) => {
     setLeads((prev) => [newLead, ...prev.filter((l) => l.id !== newLead.id)]);
@@ -120,6 +132,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLeadScore(25);
     setRiderProfile(null);
     setQuizAnswers({ completed: false });
+    setLatestTestRide(null);
     setEvents([]);
   }, []);
 
@@ -137,12 +150,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       events,
       leads,
       testRides,
+      latestTestRide,
       setCurrentCustomer,
       updateQuizAnswers,
       setRiderProfile,
       setLeadScore,
       logEvent,
       addTestRide,
+      updateTestRide,
       addLead,
       updateLead,
       resetToDefault,
@@ -155,9 +170,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       events,
       leads,
       testRides,
+      latestTestRide,
       updateQuizAnswers,
       logEvent,
       addTestRide,
+      updateTestRide,
       addLead,
       updateLead,
       resetToDefault,

@@ -16,6 +16,8 @@ export type JourneyStage =
   | 'PROFILE GENERATED'
   | 'Profile Generated'
   | 'Test Ride Booked'
+  | 'PURCHASE CONSIDERATION'
+  | 'Purchase Consideration'
   | 'Deliberation'
   | 'Decision Ready';
 
@@ -89,12 +91,21 @@ export interface TestRideBooking {
   id: string;
   customerName: string;
   phone: string;
+  email?: string;
   city: City;
   preferredDate: string;
   preferredTimeSlot: string;
   status: TestRideStatus;
   modelInterest: string;
   experienceCenter: string;
+  bookingRef?: string;
+  primaryConcern?: string;
+  consentTimestamp?: string;
+  feedbackReaction?: 'Loved it' | 'Good' | 'Still unsure' | 'Not for me';
+  feedbackNotes?: string;
+  unresolvedConcern?: string;
+  referralName?: string;
+  referralEmail?: string;
 }
 
 export interface AppStateContextType {
@@ -105,13 +116,15 @@ export interface AppStateContextType {
   events: UserEvent[];
   leads: DemoLead[];
   testRides: TestRideBooking[];
+  latestTestRide?: TestRideBooking | null;
   // Mutators/Actions
   setCurrentCustomer: (customer: CustomerProfile | null) => void;
   updateQuizAnswers: (answers: Partial<QuizAnswers>) => void;
   setRiderProfile: (profile: RiderProfileData | null) => void;
   setLeadScore: (score: number) => void;
   logEvent: (type: string, page: string, metadata?: Record<string, any>) => void;
-  addTestRide: (ride: Omit<TestRideBooking, 'id'>) => void;
+  addTestRide: (ride: Omit<TestRideBooking, 'id'>) => TestRideBooking;
+  updateTestRide: (id: string, updates: Partial<TestRideBooking>) => void;
   addLead: (lead: DemoLead) => void;
   updateLead: (id: string, updates: Partial<DemoLead>) => void;
   resetToDefault: () => void;
