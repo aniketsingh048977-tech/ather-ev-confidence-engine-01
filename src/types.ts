@@ -13,6 +13,8 @@ export type JourneyStage =
   | 'Awareness'
   | 'Evaluation'
   | 'Intent'
+  | 'PROFILE GENERATED'
+  | 'Profile Generated'
   | 'Test Ride Booked'
   | 'Deliberation'
   | 'Decision Ready';
@@ -24,7 +26,7 @@ export interface DemoLead {
   name: string;
   city: City;
   riderProfile: string;
-  primaryConcern: PrimaryConcern;
+  primaryConcern: PrimaryConcern | string;
   matchPercentage: number;
   leadScore: number; // 15 to 95
   journeyStage: JourneyStage;
@@ -48,23 +50,31 @@ export interface CustomerProfile {
 }
 
 export interface QuizAnswers {
-  dailyCommute?: string;
-  monthlyFuelExpense?: number;
-  parkingType?: string;
-  primaryPriority?: PrimaryConcern;
+  dailyCommute?: string; // Q1
+  whoWillUse?: string; // Q2
+  primaryPriority?: string; // Q3
+  parkingType?: string; // Q4
+  monthlyFuelExpense?: number; // Q5
+  biggestConcern?: string; // Q6
+  yesFactor?: string; // Q7
   weekendRiding?: string;
   pillionFrequency?: string;
-  answersMap?: Record<string, string | number | boolean>;
+  answersMap?: Record<string, any>;
+  completed?: boolean;
 }
 
 export interface RiderProfileData {
   persona: string;
   archetype: string;
+  description?: string;
   suggestedAtherModel: string;
+  matchScore: number;
   confidenceScore: number;
+  intentScore: number;
   keyDrivers: string[];
   addressedConcerns: string[];
   productDataRequirementNote: string;
+  generatedAt?: string;
 }
 
 export interface UserEvent {
@@ -102,6 +112,7 @@ export interface AppStateContextType {
   setLeadScore: (score: number) => void;
   logEvent: (type: string, page: string, metadata?: Record<string, any>) => void;
   addTestRide: (ride: Omit<TestRideBooking, 'id'>) => void;
+  addLead: (lead: DemoLead) => void;
   updateLead: (id: string, updates: Partial<DemoLead>) => void;
   resetToDefault: () => void;
 }

@@ -17,9 +17,9 @@ import { SEEDED_DEMO_LEADS } from '../data/demoLeads';
 
 const defaultContext: AppStateContextType = {
   currentCustomer: null,
-  quizAnswers: {},
+  quizAnswers: { completed: false },
   riderProfile: null,
-  leadScore: 42,
+  leadScore: 25,
   events: [],
   leads: SEEDED_DEMO_LEADS,
   testRides: [],
@@ -29,6 +29,7 @@ const defaultContext: AppStateContextType = {
   setLeadScore: () => {},
   logEvent: () => {},
   addTestRide: () => {},
+  addLead: () => {},
   updateLead: () => {},
   resetToDefault: () => {},
 };
@@ -47,25 +48,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswers>({
-    dailyCommute: '25-35 km/day',
-    monthlyFuelExpense: 3200,
-    parkingType: 'Dedicated covered parking with 5A socket',
-    primaryPriority: 'Range',
-    weekendRiding: 'City only (occasional ring-road coffee runs)',
-    pillionFrequency: 'Sometimes with friend or spouse',
+    completed: false,
   });
 
-  const [riderProfile, setRiderProfile] = useState<RiderProfileData | null>({
-    persona: 'Urban Efficiency Seeker',
-    archetype: 'Pragmatic Tech Commuter',
-    suggestedAtherModel: 'Ather 450 Series [VERIFIED ATHER PRODUCT DATA REQUIRED]',
-    confidenceScore: 88,
-    keyDrivers: ['Monthly fuel-to-electric operational delta', 'Dedicated home slow-charging access'],
-    addressedConcerns: ['Range anxiety mitigated by daily commute analysis'],
-    productDataRequirementNote: '[VERIFIED ATHER PRODUCT DATA REQUIRED]',
-  });
+  const [riderProfile, setRiderProfile] = useState<RiderProfileData | null>(null);
 
-  const [leadScore, setLeadScore] = useState<number>(76);
+  const [leadScore, setLeadScore] = useState<number>(25); // base 20 + website visit 5
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [leads, setLeads] = useState<DemoLead[]>(SEEDED_DEMO_LEADS);
   const [testRides, setTestRides] = useState<TestRideBooking[]>([
@@ -117,6 +105,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logEvent('TEST_RIDE_BOOKED', '/test-ride', { bookingId: newRide.id, city: newRide.city });
   }, [logEvent]);
 
+  const addLead = useCallback((newLead: DemoLead) => {
+    setLeads((prev) => [newLead, ...prev.filter((l) => l.id !== newLead.id)]);
+  }, []);
+
   const updateLead = useCallback((id: string, updates: Partial<DemoLead>) => {
     setLeads((prev) =>
       prev.map((lead) => (lead.id === id ? { ...lead, ...updates } : lead))
@@ -125,7 +117,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetToDefault = useCallback(() => {
     setLeads(SEEDED_DEMO_LEADS);
-    setLeadScore(76);
+    setLeadScore(25);
+    setRiderProfile(null);
+    setQuizAnswers({ completed: false });
     setEvents([]);
   }, []);
 
@@ -149,6 +143,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setLeadScore,
       logEvent,
       addTestRide,
+      addLead,
       updateLead,
       resetToDefault,
     }),
@@ -163,6 +158,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateQuizAnswers,
       logEvent,
       addTestRide,
+      addLead,
       updateLead,
       resetToDefault,
     ]
