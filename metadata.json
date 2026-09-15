@@ -1,0 +1,6 @@
+{
+  "name": "Ather EV Confidence Engine",
+  "description": "Academic prototype for an MBA digital marketing assessment. From 'Should I buy an EV?' to 'I should test this.'",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

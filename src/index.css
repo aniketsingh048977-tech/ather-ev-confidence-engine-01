@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --color-page: #0B0D10;
+  --color-page-alt: #111418;
+  --color-card: #16191E;
+  --color-text-primary: #F5F7FA;
+  --color-text-secondary: #9AA3AF;
+  --color-accent: #00E08A;
+  --color-contrast-bg: #F4F5F2;
+  --color-contrast-text: #0B0D10;
+}
+
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
+  color: #F5F7FA;
+  background-color: #0B0D10;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
