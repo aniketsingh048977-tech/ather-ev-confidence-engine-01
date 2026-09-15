@@ -26,12 +26,18 @@ import { Badge } from '../components/ui/Badge';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { SecondaryButton } from '../components/ui/SecondaryButton';
 import { useAppState } from '../context/AppContext';
+import { usePresentation } from '../context/PresentationContext';
 import { TestRideBooking } from '../types';
 
 export const ConfirmationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { latestTestRide, testRides, currentCustomer, logEvent } = useAppState();
+  const {
+    isActive: isPresentationActive,
+    currentStep: presentationStep,
+    nextStep: presentationNextStep,
+  } = usePresentation();
 
   // Retrieve booking either from router navigation state, latestTestRide, or first in testRides
   const booking: Partial<TestRideBooking> =
@@ -243,14 +249,25 @@ export const ConfirmationPage: React.FC = () => {
             Back to Home
           </SecondaryButton>
 
-          <PrimaryButton
-            to="/post-ride"
-            size="lg"
-            className="w-full sm:w-auto justify-center text-xs sm:text-sm font-semibold !px-6"
-            icon={<ArrowRight size={15} />}
-          >
-            I've completed my ride
-          </PrimaryButton>
+          {isPresentationActive && presentationStep === 10 ? (
+            <PrimaryButton
+              onClick={presentationNextStep}
+              size="lg"
+              className="w-full sm:w-auto justify-center text-xs sm:text-sm font-semibold !px-6 shadow-[0_0_20px_rgba(0,224,138,0.35)]"
+              icon={<ArrowRight size={15} />}
+            >
+              Step 11: Open Admin Command Center →
+            </PrimaryButton>
+          ) : (
+            <PrimaryButton
+              to="/post-ride"
+              size="lg"
+              className="w-full sm:w-auto justify-center text-xs sm:text-sm font-semibold !px-6"
+              icon={<ArrowRight size={15} />}
+            >
+              I've completed my ride
+            </PrimaryButton>
+          )}
         </motion.div>
       </div>
     </div>

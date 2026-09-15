@@ -29,7 +29,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     lg: 'px-8 py-4 text-base',
   }[size];
 
-  const baseClasses = `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-300 bg-[#00E08A] text-[#0B0D10] hover:bg-[#1ae596] hover:shadow-[0_0_28px_rgba(0,224,138,0.45)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none whitespace-nowrap cursor-pointer ${sizeClasses} ${className}`;
+  const baseClasses = `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-200 bg-[#00E08A] text-[#0B0D10] hover:bg-[#1ae596] hover:shadow-[0_0_28px_rgba(0,224,138,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00E08A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0D10] active:scale-[0.97] active:bg-[#00c77a] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100 whitespace-nowrap cursor-pointer ${sizeClasses} ${className}`;
 
   if (to && !disabled) {
     return (

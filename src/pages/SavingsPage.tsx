@@ -41,6 +41,7 @@ import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { SecondaryButton } from '../components/ui/SecondaryButton';
 import { MotionSection, MotionItem } from '../components/motion/MotionSection';
 import { useAppState } from '../context/AppContext';
+import { usePresentation } from '../context/PresentationContext';
 
 type SavingsGoalCategory = 'Weekend travel' | 'Investments' | 'Fitness' | 'Entertainment' | 'Education';
 
@@ -85,6 +86,8 @@ export const SavingsPage: React.FC = () => {
   // Interactive 5 savings goals tiles
   const [selectedGoal, setSelectedGoal] = useState<SavingsGoalCategory>('Weekend travel');
 
+  const { isActive: isPresentationActive, currentStep: presentationStep } = usePresentation();
+
   // "Can I Make It?" Range Simulator inputs
   const [routeStart, setRouteStart] = useState<string>(
     currentCustomer?.city ? `Home, ${currentCustomer.city}` : 'Home, Indiranagar'
@@ -93,6 +96,29 @@ export const SavingsPage: React.FC = () => {
   const [routeStop, setRouteStop] = useState<string>('Indiranagar Gym / Coffee');
   const [oneWayKm, setOneWayKm] = useState<number>(16);
   const [tripsPerDay, setTripsPerDay] = useState<number>(2); // standard roundtrip
+
+  // Presentation Mode: Riya Desai parameters
+  useEffect(() => {
+    if (isPresentationActive) {
+      setMonthlyDistance(780); // 15 km * 2 * 26 days = 780 km
+      setRouteStart('Home, Kothrud, Pune');
+      setRouteDestination('Office, Hinjewadi, Pune');
+      setOneWayKm(15);
+    }
+  }, [isPresentationActive]);
+
+  // Step 6 auto-scroll to range simulator
+  useEffect(() => {
+    if (isPresentationActive && presentationStep === 6) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById('range-simulator');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isPresentationActive, presentationStep]);
 
   // Calculations
   const monthlyPetrolCost = useMemo(() => {
@@ -631,7 +657,7 @@ export const SavingsPage: React.FC = () => {
           </MotionItem>
 
           {/* 4. RANGE SECTION: "CAN I MAKE IT?" */}
-          <MotionItem className="mt-12">
+          <MotionItem className="mt-12" id="range-simulator">
             <div className="bg-[#111418] border border-white/[0.08] rounded-[24px] p-6 sm:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
               {/* Header */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/[0.06]">

@@ -29,7 +29,7 @@ export const SecondaryButton: React.FC<SecondaryButtonProps> = ({
     lg: 'px-8 py-4 text-base',
   }[size];
 
-  const baseClasses = `inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-300 bg-transparent text-[#F5F7FA] border border-white/20 hover:border-white/60 hover:bg-white/[0.06] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer ${sizeClasses} ${className}`;
+  const baseClasses = `inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 bg-transparent text-[#F5F7FA] border border-white/20 hover:border-white/60 hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0D10] active:scale-[0.97] active:bg-white/[0.1] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 whitespace-nowrap cursor-pointer ${sizeClasses} ${className}`;
 
   if (to && !disabled) {
     return (

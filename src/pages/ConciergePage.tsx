@@ -29,6 +29,7 @@ import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { SecondaryButton } from '../components/ui/SecondaryButton';
 import { ScoreRing } from '../components/ui/ScoreRing';
 import { useAppState } from '../context/AppContext';
+import { usePresentation } from '../context/PresentationContext';
 
 interface ChatMessage {
   id: string;
@@ -294,6 +295,23 @@ export const ConciergePage: React.FC = () => {
     const { text, showHumanHandOff } = generateResponse(userText);
     deliverAssistantResponse(text, showHumanHandOff);
   };
+
+  const { isActive: isPresentationActive, currentStep: presentationStep } = usePresentation();
+
+  // Auto-ask apartment charging question on Step 8 of Presentation Mode
+  useEffect(() => {
+    if (isPresentationActive && presentationStep === 8) {
+      const timer = setTimeout(() => {
+        const hasAsked = messages.some(
+          (m) => m.sender === 'user' && m.text.toLowerCase().includes('charging')
+        );
+        if (!hasAsked && !isTyping && !isStreaming) {
+          handleSendMessage('How can I think about charging in an apartment?');
+        }
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [isPresentationActive, presentationStep, messages, isTyping, isStreaming]);
 
   // Submit Talk to a Human callback form
   const handleHumanCallbackSubmit = (e: React.FormEvent) => {

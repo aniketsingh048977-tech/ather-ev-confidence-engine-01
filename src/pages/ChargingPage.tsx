@@ -31,6 +31,7 @@ import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { SecondaryButton } from '../components/ui/SecondaryButton';
 import { MotionSection, MotionItem } from '../components/motion/MotionSection';
 import { useAppState } from '../context/AppContext';
+import { usePresentation } from '../context/PresentationContext';
 
 type ChargingOptionKey = 'Home' | 'Apartment' | 'Workplace' | 'Public' | 'Unsure';
 
@@ -96,6 +97,14 @@ export const ChargingPage: React.FC = () => {
   })();
 
   const [selectedOption, setSelectedOption] = useState<ChargingOptionKey>(initialOption);
+
+  const { isActive: isPresentationActive, currentStep: presentationStep } = usePresentation();
+
+  useEffect(() => {
+    if (isPresentationActive && presentationStep === 7) {
+      setSelectedOption('Apartment');
+    }
+  }, [isPresentationActive, presentationStep]);
 
   // Checkbox toggle states for interactive checklist feel
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});

@@ -27,6 +27,8 @@ import { Badge } from '../components/ui/Badge';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { useAppState } from '../context/AppContext';
 import { City, PrimaryConcern, TestRideBooking } from '../types';
+import { usePresentation } from '../context/PresentationContext';
+import { RIYA_DESAI_BOOKING } from '../data/demoCustomerRiya';
 
 const CITIES: City[] = ['Bengaluru', 'Pune', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad'];
 
@@ -93,6 +95,26 @@ export const TestRidePage: React.FC = () => {
   // Errors & Loading
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Presentation Mode Integration
+  const {
+    isActive: isPresentationActive,
+    currentStep: presentationStep,
+    goToStep: presentationGoToStep,
+  } = usePresentation();
+
+  // Auto-fill Riya Desai's information during Step 9
+  useEffect(() => {
+    if (isPresentationActive && presentationStep === 9) {
+      setName('Riya Desai');
+      setEmail('riya.desai@example.com');
+      setPhone('9823012345');
+      setCity('Pune');
+      setExperienceCenter('Ather Space, Deccan Gymkhana [VERIFIED LOCATION DATA REQUIRED]');
+      setPrimaryConcern('Charging');
+      setConsent(true);
+    }
+  }, [isPresentationActive, presentationStep]);
 
   // Interactive Checklist states
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
@@ -355,12 +377,16 @@ export const TestRidePage: React.FC = () => {
     // Delay briefly for realistic feedback then navigate
     setTimeout(() => {
       setIsSubmitting(false);
-      navigate('/confirmation', {
-        state: {
-          booking: createdRide,
-          bookingRef,
-        },
-      });
+      if (isPresentationActive) {
+        presentationGoToStep(10);
+      } else {
+        navigate('/confirmation', {
+          state: {
+            booking: createdRide,
+            bookingRef,
+          },
+        });
+      }
     }, 600);
   };
 
@@ -373,6 +399,25 @@ export const TestRidePage: React.FC = () => {
       />
 
       <div className="max-w-[1240px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+        {/* PRESENTATION DEMO BANNER */}
+        {isPresentationActive && presentationStep === 9 && (
+          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[#00E08A]/10 border border-[#00E08A]/30 text-xs text-[#00E08A]">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-[#00E08A]" />
+              <span className="font-semibold text-white">
+                Step 9: Auto-filled booking for Riya Desai (Ather Space Deccan Gymkhana, Pune)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e as any)}
+              className="px-3 py-1.5 rounded-lg bg-[#00E08A] text-[#0B0D10] font-semibold text-xs hover:bg-[#00c97b] transition-all cursor-pointer shadow-[0_0_15px_rgba(0,224,138,0.3)]"
+            >
+              Submit Riya's Ride →
+            </button>
+          </div>
+        )}
+
         {/* HEADER SECTION */}
         <div className="mb-8 sm:mb-10 text-center sm:text-left">
           <div className="flex flex-wrap items-center gap-3 mb-2">

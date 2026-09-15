@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
@@ -25,6 +25,8 @@ import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { Badge } from '../components/ui/Badge';
 import { useAppState } from '../context/AppContext';
 import { generateRiderProfile } from '../utils/profileLogic';
+import { usePresentation } from '../context/PresentationContext';
+import { RIYA_DESAI_QUIZ_ANSWERS, RIYA_DESAI_PROFILE } from '../data/demoCustomerRiya';
 
 interface QuestionConfig {
   id: number;
@@ -166,9 +168,80 @@ export const QuizPage: React.FC = () => {
     yesFactor: quizAnswers.yesFactor || '',
   });
 
+  const {
+    isActive: isPresentationActive,
+    currentStep: presentationStep,
+    nextStep: presentationNextStep,
+    goToStep: presentationGoToStep,
+  } = usePresentation();
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisPhase, setAnalysisPhase] = useState(0);
   const hasLoggedStartRef = useRef(false);
+  const autoFillTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-trigger analysis screen if presentation step is 3 or query param is set
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('step') === 'analyzing' || (isPresentationActive && presentationStep === 3)) {
+      setIsAnalyzing(true);
+      const timer1 = setTimeout(() => setAnalysisPhase(1), 700);
+      const timer2 = setTimeout(() => setAnalysisPhase(2), 1400);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+  }, [isPresentationActive, presentationStep]);
+
+  // Sequence for auto-filling Riya Desai's answers in presentation mode
+  const runRiyaAutoFill = useCallback(() => {
+    const stepsData = [
+      { step: 0, key: 'dailyCommute', val: '10-20 km' },
+      { step: 1, key: 'whoWillUse', val: 'Me' },
+      { step: 2, key: 'primaryPriority', val: 'Range confidence' },
+      { step: 3, key: 'parkingType', val: 'Apartment parking' },
+      { step: 4, key: 'monthlyFuelExpense', val: 3500 },
+      { step: 5, key: 'biggestConcern', val: 'Charging' },
+      { step: 6, key: 'yesFactor', val: 'Easy charging' },
+    ];
+
+    let currentIdx = 0;
+    setCurrentStep(0);
+
+    const stepInterval = setInterval(() => {
+      if (currentIdx < stepsData.length) {
+        const item = stepsData[currentIdx];
+        setAnswers((prev) => ({ ...prev, [item.key]: item.val }));
+        setCurrentStep(item.step);
+
+        currentIdx++;
+        if (currentIdx === stepsData.length) {
+          clearInterval(stepInterval);
+          // Wait 600ms then trigger analyzing / step 3
+          autoFillTimerRef.current = setTimeout(() => {
+            if (isPresentationActive) {
+              presentationGoToStep(3);
+            } else {
+              handleCompleteQuiz();
+            }
+          }, 800);
+        }
+      }
+    }, 650);
+
+    return () => clearInterval(stepInterval);
+  }, [isPresentationActive, presentationGoToStep]);
+
+  // Run auto-fill when entering step 2 in presentation mode
+  useEffect(() => {
+    if (isPresentationActive && presentationStep === 2) {
+      const timer = setTimeout(() => {
+        runRiyaAutoFill();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isPresentationActive, presentationStep, runRiyaAutoFill]);
 
   // Log quiz_started on first view & update lead score (+10)
   useEffect(() => {
@@ -270,8 +343,12 @@ export const QuizPage: React.FC = () => {
         intentScore: profile.intentScore,
       });
 
-      // Navigate to /profile
-      navigate('/profile');
+      // Navigate to /profile or advance presentation
+      if (isPresentationActive) {
+        presentationGoToStep(4);
+      } else {
+        navigate('/profile');
+      }
     }, 2500);
 
     return () => {
@@ -418,6 +495,22 @@ export const QuizPage: React.FC = () => {
 
       {/* QUIZ CONTAINER */}
       <div className="w-full max-w-2xl relative z-10">
+        {/* PRESENTATION DEMO BANNER */}
+        {isPresentationActive && presentationStep === 2 && (
+          <div className="mb-4 flex items-center justify-between px-4 py-2.5 rounded-xl bg-[#00E08A]/10 border border-[#00E08A]/30 text-xs text-[#00E08A]">
+            <div className="flex items-center gap-2 font-medium">
+              <Sparkles size={14} className="animate-spin text-[#00E08A]" />
+              <span>Step 2 Demo: Auto-filling answers for Riya Desai (Pune • 15 km Commute)</span>
+            </div>
+            <button
+              onClick={runRiyaAutoFill}
+              className="text-[11px] underline hover:text-white transition-colors cursor-pointer"
+            >
+              Replay
+            </button>
+          </div>
+        )}
+
         {/* TOP PROGRESS BAR & HEADER */}
         <div className="mb-6">
           <div className="flex items-center justify-between text-xs text-[#9AA3AF] mb-2.5">

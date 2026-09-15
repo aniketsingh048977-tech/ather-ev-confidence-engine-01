@@ -19,7 +19,14 @@ export type JourneyStage =
   | 'PURCHASE CONSIDERATION'
   | 'Purchase Consideration'
   | 'Deliberation'
-  | 'Decision Ready';
+  | 'Decision Ready'
+  | 'NEW LEAD'
+  | 'QUALIFIED'
+  | 'TEST RIDE INVITED'
+  | 'TEST RIDE BOOKED'
+  | 'TEST RIDE COMPLETED'
+  | 'PURCHASED'
+  | 'ADVOCATE';
 
 export type TestRideStatus = 'Scheduled' | 'Completed' | 'Pending' | 'Not Booked' | 'Cancelled';
 
@@ -117,6 +124,7 @@ export interface AppStateContextType {
   leads: DemoLead[];
   testRides: TestRideBooking[];
   latestTestRide?: TestRideBooking | null;
+  setLatestTestRide: (ride: TestRideBooking | null) => void;
   // Mutators/Actions
   setCurrentCustomer: (customer: CustomerProfile | null) => void;
   updateQuizAnswers: (answers: Partial<QuizAnswers>) => void;
