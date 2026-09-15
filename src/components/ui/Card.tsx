@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { TiltCard } from '../motion/TiltCard';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -17,16 +18,24 @@ export const Card: React.FC<CardProps> = ({
   interactive = true,
   ...rest
 }) => {
+  if (interactive) {
+    return (
+      <TiltCard
+        className={`bg-[#16191E] border border-white/[0.06] rounded-[20px] p-6 sm:p-8 transition-all duration-300 hover:border-white/25 hover:shadow-[0_12px_32px_rgba(0,0,0,0.45)] ${className}`}
+        {...rest}
+      >
+        {children}
+      </TiltCard>
+    );
+  }
+
   return (
     <div
-      className={`bg-[#16191E] border border-white/[0.06] rounded-[20px] p-6 sm:p-8 transition-all duration-300 ${
-        interactive
-          ? 'hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_12px_32px_rgba(0,0,0,0.45)]'
-          : ''
-      } ${className}`}
+      className={`bg-[#16191E] border border-white/[0.06] rounded-[20px] p-6 sm:p-8 ${className}`}
       {...rest}
     >
       {children}
     </div>
   );
 };
+

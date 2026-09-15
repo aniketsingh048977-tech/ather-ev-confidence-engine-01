@@ -25,7 +25,13 @@ import { SecondaryButton } from '../components/ui/SecondaryButton';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { MotionSection, MotionItem } from '../components/motion/MotionSection';
+import { RevealText } from '../components/motion/RevealText';
+import { DotGrid } from '../components/motion/living-backgrounds/DotGrid';
+import { AuroraBackground } from '../components/motion/living-backgrounds/AuroraBackground';
+import { GlowOrb } from '../components/motion/living-backgrounds/GlowOrb';
 import { useAppState } from '../context/AppContext';
+
+
 
 export const HomePage: React.FC = () => {
   const { logEvent } = useAppState();
@@ -116,11 +122,12 @@ export const HomePage: React.FC = () => {
     <div className="w-full relative overflow-hidden">
       {/* 1. HERO SECTION (Full viewport height) */}
       <section className="relative w-full min-h-[calc(100vh-5rem)] flex flex-col justify-between items-center text-center px-4 sm:px-6 lg:px-8 pt-12 md:pt-20 pb-8 overflow-hidden">
-        {/* Soft green radial glow behind headline */}
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[600px] md:w-[850px] h-[340px] sm:h-[600px] md:h-[600px] pointer-events-none rounded-full blur-[90px] md:blur-[130px] opacity-30 bg-[#00E08A]/40"
-          aria-hidden="true"
-        />
+        {/* Living Backgrounds: Interactive DotGrid & Aurora Drift */}
+        <DotGrid className="opacity-40" />
+        <AuroraBackground className="opacity-60" />
+
+        {/* Soft green radial GlowOrb behind headline */}
+        <GlowOrb size={720} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
 
         {/* Thin animated SVG line flowing across the background like a road or charging path */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
@@ -194,15 +201,12 @@ export const HomePage: React.FC = () => {
             <Badge variant="ACADEMIC PROTOTYPE" />
           </motion.div>
 
-          {/* Headline: Is an EV right for YOUR life? */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          {/* Headline: Revealed with masked word slide up */}
+          <RevealText
+            as="h1"
+            text="Is an EV right for YOUR life?"
             className="font-heading text-[42px] sm:text-[60px] md:text-[80px] font-semibold tracking-[-0.02em] leading-[1.08] text-[#F5F7FA]"
-          >
-            Is an EV right for <span className="text-[#00E08A]">YOUR</span> life?
-          </motion.h1>
+          />
 
           {/* Subtext */}
           <motion.p
@@ -214,6 +218,7 @@ export const HomePage: React.FC = () => {
             Discover your rider profile, understand your EV fit, calculate your potential savings
             and find your next step. Powered by AI.
           </motion.p>
+
 
           {/* Buttons */}
           <motion.div
@@ -265,15 +270,18 @@ export const HomePage: React.FC = () => {
                 <span className="inline-block text-[11px] font-semibold tracking-[0.14em] uppercase text-[#00E08A] mb-3">
                   Confidence Framework
                 </span>
-                <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#F5F7FA]">
-                  Three steps to clarity.
-                </h2>
+                <RevealText
+                  as="h2"
+                  text="Three steps to clarity."
+                  className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#F5F7FA]"
+                />
                 <p className="mt-4 text-base md:text-lg text-[#9AA3AF] leading-relaxed">
                   Moving past general EV stereotypes requires honest commute physics, personalized
                   lifestyle mapping, and unpressured hands-on throttle time.
                 </p>
               </div>
             </MotionItem>
+
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
               {experienceCards.map((card) => (
@@ -325,15 +333,18 @@ export const HomePage: React.FC = () => {
                 <span className="inline-block text-[11px] font-semibold tracking-[0.14em] uppercase text-[#0B0D10]/70 mb-3 bg-[#0B0D10]/5 px-3 py-1 rounded-full">
                   Individual Mobility Calibration
                 </span>
-                <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#0B0D10] leading-tight">
-                  Don&rsquo;t choose your EV based on someone else&rsquo;s life.
-                </h2>
+                <RevealText
+                  as="h2"
+                  text="Don’t choose your EV based on someone else’s life."
+                  className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#0B0D10] leading-tight"
+                />
                 <p className="mt-4 text-base md:text-lg text-[#0B0D10]/80 leading-relaxed">
                   Generic EV opinions fail because no two urban routines are identical. The Confidence Engine
                   evaluates your actual commuting reality across six key variables.
                 </p>
               </div>
             </MotionItem>
+
 
             {/* Six small tiles with icons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -380,14 +391,17 @@ export const HomePage: React.FC = () => {
                 <span className="inline-block text-[11px] font-semibold tracking-[0.14em] uppercase text-[#00E08A] mb-3">
                   Behavioral Progression
                 </span>
-                <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#F5F7FA]">
-                  The Journey to Electric
-                </h2>
+                <RevealText
+                  as="h2"
+                  text="The Journey to Electric"
+                  className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#F5F7FA]"
+                />
                 <p className="mt-4 text-base md:text-lg text-[#9AA3AF] leading-relaxed">
                   From initial curiosity to a decisive physical road experience. Each stage removes
                   friction through data-driven confidence.
                 </p>
               </div>
+
             </MotionItem>
 
             {/* Horizontal Timeline Strip */}
@@ -439,10 +453,13 @@ export const HomePage: React.FC = () => {
             </MotionItem>
 
             <MotionItem>
-              <h2 className="font-heading text-3xl sm:text-5xl md:text-6xl font-semibold tracking-[-0.02em] text-[#F5F7FA] max-w-4xl leading-[1.12] mx-auto">
-                &ldquo;Don&rsquo;t ask me what scooter I want. Ask me how I live.&rdquo;
-              </h2>
+              <RevealText
+                as="h2"
+                text="“Don’t ask me what scooter I want. Ask me how I live.”"
+                className="font-heading text-3xl sm:text-5xl md:text-6xl font-semibold tracking-[-0.02em] text-[#F5F7FA] max-w-4xl leading-[1.12] mx-auto"
+              />
             </MotionItem>
+
 
             <MotionItem className="mt-6">
               <p className="text-base sm:text-lg text-[#9AA3AF] max-w-xl mx-auto leading-relaxed">

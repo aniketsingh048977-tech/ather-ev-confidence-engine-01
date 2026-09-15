@@ -35,12 +35,12 @@ export const MotionSection: React.FC<MotionSectionProps> = ({
       y: 0,
       transition: {
         duration: prefersReduced ? 0 : 0.6,
-        ease: [0.16, 1, 0.3, 1],
+        ease: [0.16, 1, 0.3, 1] as const,
         delay,
         staggerChildren: prefersReduced ? 0 : 0.08,
       },
     },
-  };
+  } as any;
 
   const backgroundClass = lightMode
     ? 'bg-[#F4F5F2] text-[#0B0D10]'
@@ -79,10 +79,10 @@ export const MotionItem: React.FC<{ children: React.ReactNode; className?: strin
       y: 0,
       transition: {
         duration: prefersReduced ? 0 : 0.5,
-        ease: [0.16, 1, 0.3, 1],
+        ease: [0.16, 1, 0.3, 1] as const,
       },
     },
-  };
+  } as any;
 
   return (
     <motion.div variants={itemVariants} className={className}>

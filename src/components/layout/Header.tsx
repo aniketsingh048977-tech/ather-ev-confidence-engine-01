@@ -8,6 +8,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ArrowUpRight, ShieldAlert } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { PrimaryButton } from '../ui/PrimaryButton';
+import { AuroraBackground } from '../motion/living-backgrounds/AuroraBackground';
 
 const NAV_LINKS = [
   { label: 'How It Works', path: '/how-it-works' },
@@ -24,8 +25,12 @@ export const Header: React.FC = () => {
   const closeMenu = () => setMobileMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-[16px] bg-[#0B0D10]/70 border-b border-white/[0.06] transition-colors duration-200">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 w-full backdrop-blur-[16px] bg-[#0B0D10]/75 border-b border-white/[0.06] transition-colors duration-200 overflow-hidden">
+      {/* Faint Aurora Background behind header glass */}
+      <AuroraBackground faint isMobileCompact className="opacity-40" />
+
+      <div className="relative z-10 max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+
         {/* Left: Brand Identity & Academic Prototype Badge */}
         <div className="flex items-center gap-3">
           <Link

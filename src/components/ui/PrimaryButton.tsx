@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { MagneticButton } from '../motion/MagneticButton';
 
 interface PrimaryButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   to?: string;
@@ -33,17 +34,22 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 
   if (to && !disabled) {
     return (
-      <Link to={to} className={baseClasses}>
-        <span>{children}</span>
-        {icon && <span className="inline-flex items-center">{icon}</span>}
-      </Link>
+      <MagneticButton enabled={!disabled}>
+        <Link to={to} className={baseClasses}>
+          <span>{children}</span>
+          {icon && <span className="inline-flex items-center">{icon}</span>}
+        </Link>
+      </MagneticButton>
     );
   }
 
   return (
-    <button className={baseClasses} disabled={disabled} {...rest}>
-      <span>{children}</span>
-      {icon && <span className="inline-flex items-center">{icon}</span>}
-    </button>
+    <MagneticButton enabled={!disabled}>
+      <button className={baseClasses} disabled={disabled} {...rest}>
+        <span>{children}</span>
+        {icon && <span className="inline-flex items-center">{icon}</span>}
+      </button>
+    </MagneticButton>
   );
 };
+
