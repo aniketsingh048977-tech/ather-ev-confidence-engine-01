@@ -3,422 +3,481 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   ArrowRight,
-  ShieldCheck,
   Compass,
-  Cpu,
-  Layers,
   Sparkles,
   Zap,
-  RotateCcw,
-  Check,
-  ExternalLink,
+  Navigation,
+  Activity,
+  SlidersHorizontal,
+  BatteryCharging,
+  Wallet,
+  ShieldCheck,
+  ChevronDown,
+  CheckCircle2,
 } from 'lucide-react';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { SecondaryButton } from '../components/ui/SecondaryButton';
 import { Card } from '../components/ui/Card';
-import { Badge, BadgeVariant } from '../components/ui/Badge';
-import { ScoreRing } from '../components/ui/ScoreRing';
-import { SectionHeading } from '../components/ui/SectionHeading';
+import { Badge } from '../components/ui/Badge';
 import { MotionSection, MotionItem } from '../components/motion/MotionSection';
 import { useAppState } from '../context/AppContext';
 
 export const HomePage: React.FC = () => {
-  const { leads, leadScore, currentCustomer } = useAppState();
-  const [interactiveScore, setInteractiveScore] = useState<number>(88);
+  const { logEvent } = useAppState();
+  const prefersReduced = useReducedMotion();
+  const hasLoggedRef = React.useRef(false);
 
-  const allRoutes = [
-    { path: '/', label: 'Home / Design System', status: 'Phase 1 Active' },
-    { path: '/quiz', label: 'Confidence Quiz (/quiz)', status: 'Placeholder' },
-    { path: '/profile', label: 'Rider Profile (/profile)', status: 'Placeholder' },
-    { path: '/savings', label: 'Savings Calculator (/savings)', status: 'Placeholder' },
-    { path: '/charging', label: 'Charging Confidence (/charging)', status: 'Placeholder' },
-    { path: '/concierge', label: 'AI Concierge (/concierge)', status: 'Placeholder' },
-    { path: '/test-ride', label: 'Test Ride Booking (/test-ride)', status: 'Placeholder' },
-    { path: '/confirmation', label: 'Ride Confirmation (/confirmation)', status: 'Placeholder' },
-    { path: '/post-ride', label: 'Post-Ride Feedback (/post-ride)', status: 'Placeholder' },
-    { path: '/how-it-works', label: 'How It Works (/how-it-works)', status: 'Placeholder' },
-    { path: '/admin', label: 'Admin Overview (/admin)', status: 'Placeholder' },
-    { path: '/admin/leads', label: 'Admin Leads Hub (/admin/leads)', status: 'Placeholder' },
-    { path: '/admin/analytics', label: 'Admin Analytics (/admin/analytics)', status: 'Placeholder' },
-    { path: '/admin/automations', label: 'Admin Automations (/admin/automations)', status: 'Placeholder' },
+  // Log page_view event on mount
+  useEffect(() => {
+    if (!hasLoggedRef.current) {
+      hasLoggedRef.current = true;
+      logEvent('page_view', '/', { page: 'Home', title: 'Ather EV Confidence Engine' });
+    }
+  }, [logEvent]);
+
+  // 3 Experience Cards data
+  const experienceCards = [
+    {
+      num: '01',
+      title: 'UNDERSTAND MY RIDE',
+      text: 'Learn how an EV fits daily life.',
+      link: '/savings',
+      actionLabel: 'Calculate Economics',
+      icon: <Compass size={24} strokeWidth={1.5} className="text-[#00E08A]" />,
+    },
+    {
+      num: '02',
+      title: 'DISCOVER MY MATCH',
+      text: 'Answer a few questions and receive a personalised rider profile.',
+      link: '/quiz',
+      actionLabel: 'Take the Assessment',
+      icon: <Sparkles size={24} strokeWidth={1.5} className="text-[#00E08A]" />,
+    },
+    {
+      num: '03',
+      title: 'EXPERIENCE IT',
+      text: 'Move from digital confidence to a real test ride.',
+      link: '/test-ride',
+      actionLabel: 'Book Experience',
+      icon: <Zap size={24} strokeWidth={1.5} className="text-[#00E08A]" />,
+    },
+  ];
+
+  // 6 Small tiles for light section
+  const personalFactors = [
+    {
+      title: 'Commute',
+      text: 'Your daily distance, real traffic congestion, and daily routes.',
+      icon: <Navigation size={20} strokeWidth={1.5} className="text-[#0B0D10]" />,
+    },
+    {
+      title: 'Usage',
+      text: 'Solo urban sprint, heavy weekend riding, or daily pillion comfort.',
+      icon: <Activity size={20} strokeWidth={1.5} className="text-[#0B0D10]" />,
+    },
+    {
+      title: 'Priorities',
+      text: 'Instant warp acceleration, storage capacity, or family utility.',
+      icon: <SlidersHorizontal size={20} strokeWidth={1.5} className="text-[#0B0D10]" />,
+    },
+    {
+      title: 'Charging access',
+      text: 'Dedicated 5A home socket, apartment society, or public grid points.',
+      icon: <BatteryCharging size={20} strokeWidth={1.5} className="text-[#0B0D10]" />,
+    },
+    {
+      title: 'Spending',
+      text: 'Monthly petrol expenses mapped directly to electric running cost delta.',
+      icon: <Wallet size={20} strokeWidth={1.5} className="text-[#0B0D10]" />,
+    },
+    {
+      title: 'Concerns',
+      text: 'Real-world monsoons, battery thermal health, and battery longevity.',
+      icon: <ShieldCheck size={20} strokeWidth={1.5} className="text-[#0B0D10]" />,
+    },
+  ];
+
+  // Journey Strip Stages
+  const journeyStages = [
+    { step: '01', name: 'Curious', desc: 'Evaluating whether electric mobility fits your lifestyle.' },
+    { step: '02', name: 'Understand', desc: 'Demystifying real commute ranges and operational TCO savings.' },
+    { step: '03', name: 'Match', desc: 'Discovering your personalized Ather model recommendation.' },
+    { step: '04', name: 'Confident', desc: 'Resolving battery, charging, and apartment parking queries.' },
+    { step: '05', name: 'Test Ride', desc: 'Experiencing instantaneous electric torque on your local roads.' },
+    { step: '06', name: 'Decide', desc: 'Making an informed decision backed by transparent financial data.' },
   ];
 
   return (
-    <div className="w-full">
-      {/* Hero Section */}
-      <MotionSection className="pt-20 md:pt-32 pb-24 md:pb-36">
-        <MotionItem>
-          <div className="flex flex-wrap items-center gap-2 mb-8">
+    <div className="w-full relative overflow-hidden">
+      {/* 1. HERO SECTION (Full viewport height) */}
+      <section className="relative w-full min-h-[calc(100vh-5rem)] flex flex-col justify-between items-center text-center px-4 sm:px-6 lg:px-8 pt-12 md:pt-20 pb-8 overflow-hidden">
+        {/* Soft green radial glow behind headline */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[600px] md:w-[850px] h-[340px] sm:h-[600px] md:h-[600px] pointer-events-none rounded-full blur-[90px] md:blur-[130px] opacity-30 bg-[#00E08A]/40"
+          aria-hidden="true"
+        />
+
+        {/* Thin animated SVG line flowing across the background like a road or charging path */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+          <svg
+            className="w-full h-full opacity-35"
+            viewBox="0 0 1440 900"
+            fill="none"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#00E08A" stopOpacity="0.05" />
+                <stop offset="50%" stopColor="#00E08A" stopOpacity="0.75" />
+                <stop offset="100%" stopColor="#00E08A" stopOpacity="0.05" />
+              </linearGradient>
+            </defs>
+
+            {/* Static subtle guide line */}
+            <path
+              d="M-100,550 C250,680 450,220 720,440 C980,640 1200,320 1540,400"
+              stroke="rgba(255,255,255,0.04)"
+              strokeWidth="1.5"
+              fill="none"
+            />
+
+            {/* Animated pulsing charging stream line */}
+            <motion.path
+              d="M-100,550 C250,680 450,220 720,440 C980,640 1200,320 1540,400"
+              stroke="url(#pathGradient)"
+              strokeWidth="2"
+              fill="none"
+              strokeDasharray="160 380"
+              initial={{ strokeDashoffset: 0 }}
+              animate={prefersReduced ? {} : { strokeDashoffset: -1080 }}
+              transition={{
+                duration: 12,
+                repeat: Infinity,
+                ease: 'linear',
+              }}
+            />
+
+            {/* Secondary lower accent road contour */}
+            <motion.path
+              d="M-80,720 C320,620 540,820 860,690 C1160,560 1340,780 1560,650"
+              stroke="#00E08A"
+              strokeOpacity="0.15"
+              strokeWidth="1"
+              fill="none"
+              strokeDasharray="80 240"
+              initial={{ strokeDashoffset: 0 }}
+              animate={prefersReduced ? {} : { strokeDashoffset: 640 }}
+              transition={{
+                duration: 16,
+                repeat: Infinity,
+                ease: 'linear',
+              }}
+            />
+          </svg>
+        </div>
+
+        {/* Hero Central Content */}
+        <div className="relative z-10 max-w-[1040px] mx-auto my-auto flex flex-col items-center">
+          {/* Eyebrow Badge: ACADEMIC PROTOTYPE */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-6 sm:mb-8"
+          >
             <Badge variant="ACADEMIC PROTOTYPE" />
-            <span className="text-white/20">•</span>
-            <span className="text-xs uppercase tracking-[0.12em] text-[#9AA3AF]">
-              Phase 1: Foundation & Design System
-            </span>
-          </div>
-        </MotionItem>
+          </motion.div>
 
-        <MotionItem>
-          <h1 className="font-heading text-[42px] leading-[1.08] sm:text-[60px] md:text-[80px] font-semibold tracking-[-0.02em] text-[#F5F7FA] max-w-5xl">
-            From &lsquo;Should I buy an EV?&rsquo; to &lsquo;I should test this.&rsquo;
-          </h1>
-        </MotionItem>
+          {/* Headline: Is an EV right for YOUR life? */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            className="font-heading text-[42px] sm:text-[60px] md:text-[80px] font-semibold tracking-[-0.02em] leading-[1.08] text-[#F5F7FA]"
+          >
+            Is an EV right for <span className="text-[#00E08A]">YOUR</span> life?
+          </motion.h1>
 
-        <MotionItem className="mt-8">
-          <p className="text-lg sm:text-xl md:text-2xl text-[#9AA3AF] max-w-3xl font-normal leading-relaxed">
-            The Ather EV Confidence Engine is an academic prototype for an MBA digital marketing assessment.
-            Architected to eliminate EV hesitation through personalized commute realities, objective total cost
-            of ownership, and zero-friction test ride conversion.
-          </p>
-        </MotionItem>
+          {/* Subtext */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-6 md:mt-8 max-w-2xl text-base sm:text-lg md:text-xl text-[#9AA3AF] leading-relaxed"
+          >
+            Discover your rider profile, understand your EV fit, calculate your potential savings
+            and find your next step. Powered by AI.
+          </motion.p>
 
-        <MotionItem className="mt-12">
-          <div className="flex flex-wrap gap-4 items-center">
-            <PrimaryButton to="/quiz" size="lg" icon={<ArrowRight size={18} />}>
-              Find My Match
+          {/* Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-10 sm:mt-12 flex flex-wrap gap-4 items-center justify-center"
+          >
+            <PrimaryButton to="/quiz" size="lg" icon={<ArrowRight size={18} strokeWidth={1.5} />}>
+              Find My Ather Match
             </PrimaryButton>
             <SecondaryButton to="/how-it-works" size="lg">
-              Explore How It Works
+              See How It Works
             </SecondaryButton>
-          </div>
-        </MotionItem>
-
-        {/* Highlight Stats Row */}
-        <MotionItem className="mt-20">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-12 border-t border-white/[0.06]">
-            <div>
-              <span className="block font-heading text-4xl sm:text-5xl font-semibold text-[#F5F7FA] tabular-nums">
-                12
-              </span>
-              <span className="text-xs sm:text-sm text-[#9AA3AF] mt-1 block">
-                Seeded Demo Leads
-              </span>
-            </div>
-            <div>
-              <span className="block font-heading text-4xl sm:text-5xl font-semibold text-[#00E08A] tabular-nums">
-                14
-              </span>
-              <span className="text-xs sm:text-sm text-[#9AA3AF] mt-1 block">
-                Connected Routes
-              </span>
-            </div>
-            <div>
-              <span className="block font-heading text-4xl sm:text-5xl font-semibold text-[#F5F7FA] tabular-nums">
-                0
-              </span>
-              <span className="text-xs sm:text-sm text-[#9AA3AF] mt-1 block">
-                Invented Specs
-              </span>
-            </div>
-            <div>
-              <span className="block font-heading text-4xl sm:text-5xl font-semibold text-[#00E08A] tabular-nums">
-                100%
-              </span>
-              <span className="text-xs sm:text-sm text-[#9AA3AF] mt-1 block">
-                Academic Integrity
-              </span>
-            </div>
-          </div>
-        </MotionItem>
-      </MotionSection>
-
-      {/* Design System Showcase (Cards, Buttons, Badges, ScoreRing) */}
-      <MotionSection alternate={true} id="design-system">
-        <MotionItem>
-          <SectionHeading
-            eyebrow="Design Tokens & Primitives"
-            title="Engineered Design System"
-            subtext="Strict adherence to calm, cinematic Indian EV-tech mood. High-contrast typography in Space Grotesk and Inter, electric green accents, 8px spacing grid, and fluid micro-interactions."
-          />
-        </MotionItem>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-16">
-          {/* Component 1: ScoreRing Interactive */}
-          <MotionItem>
-            <Card className="h-full flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9AA3AF]">
-                    Component 01
-                  </span>
-                  <Badge variant="VERIFIED" label="ACTIVE" />
-                </div>
-                <h3 className="text-xl font-heading font-semibold text-[#F5F7FA] mb-2">
-                  ScoreRing Primitive
-                </h3>
-                <p className="text-sm text-[#9AA3AF] mb-8">
-                  Circular SVG progress ring with fluid easeOut animation and counting tabular numbers.
-                </p>
-                <div className="py-6 flex justify-center items-center">
-                  <ScoreRing
-                    score={interactiveScore}
-                    size={160}
-                    strokeWidth={12}
-                    label="Confidence"
-                    sublabel="Simulated Rider Fit"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-white/[0.06] flex items-center justify-between">
-                <span className="text-xs text-[#9AA3AF]">Test Value:</span>
-                <div className="flex gap-2">
-                  {[45, 78, 92].map((val) => (
-                    <button
-                      key={val}
-                      onClick={() => setInteractiveScore(val)}
-                      className={`px-2.5 py-1 text-xs rounded-md font-mono transition-colors ${
-                        interactiveScore === val
-                          ? 'bg-[#00E08A] text-[#0B0D10] font-bold'
-                          : 'bg-white/5 text-[#9AA3AF] hover:text-white'
-                      }`}
-                    >
-                      {val}%
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          </MotionItem>
-
-          {/* Component 2: Badges & Buttons */}
-          <MotionItem>
-            <Card className="h-full flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9AA3AF]">
-                    Component 02 & 03
-                  </span>
-                  <Badge variant="ACADEMIC PROTOTYPE" />
-                </div>
-                <h3 className="text-xl font-heading font-semibold text-[#F5F7FA] mb-2">
-                  Badges & Buttons
-                </h3>
-                <p className="text-sm text-[#9AA3AF] mb-6">
-                  Pill badges with 11px uppercase tracking and rounded-full interactive buttons with green glow.
-                </p>
-
-                {/* Badge variants */}
-                <div className="space-y-3 mb-8">
-                  <span className="text-xs uppercase text-[#9AA3AF] tracking-wider block">
-                    All Badge Variants:
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="ACADEMIC PROTOTYPE" />
-                    <Badge variant="DEMO DATA" />
-                    <Badge variant="VERIFIED" />
-                    <Badge variant="UNVERIFIED" />
-                  </div>
-                </div>
-
-                {/* Button variants */}
-                <div className="space-y-3">
-                  <span className="text-xs uppercase text-[#9AA3AF] tracking-wider block">
-                    Button Interactions:
-                  </span>
-                  <div className="flex flex-wrap gap-3">
-                    <PrimaryButton size="sm">Primary Button</PrimaryButton>
-                    <SecondaryButton size="sm">Secondary Button</SecondaryButton>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-white/[0.06] text-xs text-[#9AA3AF]">
-                Accent: <code className="text-[#00E08A]">#00E08A</code> • Card: <code className="text-white/70">#16191E</code>
-              </div>
-            </Card>
-          </MotionItem>
-
-          {/* Component 3: Card Micro-interactions */}
-          <MotionItem>
-            <Card className="h-full flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9AA3AF]">
-                    Component 04
-                  </span>
-                  <Badge variant="DEMO DATA" />
-                </div>
-                <h3 className="text-xl font-heading font-semibold text-[#F5F7FA] mb-2">
-                  Elevated Card Hover
-                </h3>
-                <p className="text-sm text-[#9AA3AF] mb-6">
-                  Lifts 4px on hover with 0.3s ease transition, border brightening, and soft shadow dissipation.
-                </p>
-
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2 text-xs text-[#9AA3AF]">
-                  <div className="flex justify-between">
-                    <span>Card Background</span>
-                    <span className="font-mono text-white">#16191E</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Card Border</span>
-                    <span className="font-mono text-white">rgba(255,255,255,0.06)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Border Radius</span>
-                    <span className="font-mono text-white">20px</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Hover Shift</span>
-                    <span className="font-mono text-[#00E08A]">translateY(-4px)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-white/[0.06]">
-                <PrimaryButton to="/quiz" size="sm" className="w-full">
-                  Launch Quiz Flow
-                </PrimaryButton>
-              </div>
-            </Card>
-          </MotionItem>
+          </motion.div>
         </div>
-      </MotionSection>
 
-      {/* Light Contrast Section (F4F5F2 background, 0B0D10 text) */}
-      <MotionSection lightMode={true}>
-        <MotionItem>
-          <div className="max-w-3xl">
-            <span className="inline-block text-[11px] font-semibold tracking-[0.14em] uppercase text-[#0B0D10]/70 mb-3 bg-[#0B0D10]/5 px-3 py-1 rounded-full">
-              Academic Charter & Data Safeguards
+        {/* Small Scroll Indicator at bottom */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="relative z-10 pt-8 pb-2 flex flex-col items-center gap-2 select-none"
+        >
+          <a
+            href="#experience-cards"
+            className="group flex flex-col items-center gap-1.5 text-xs text-[#9AA3AF] hover:text-[#00E08A] transition-colors focus:outline-none"
+            aria-label="Scroll to experience overview"
+          >
+            <span className="text-[11px] uppercase tracking-[0.14em] font-medium opacity-80 group-hover:opacity-100">
+              Scroll to explore
             </span>
-            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#0B0D10]">
-              Zero Fabrication Standard.
-            </h2>
-            <p className="mt-4 text-base md:text-lg text-[#0B0D10]/80 leading-relaxed">
-              To guarantee absolute academic authenticity for this MBA digital marketing assessment,
-              this application explicitly refuses to invent Ather product prices, battery ranges,
-              acceleration times, fast charging networks, or promotional offers.
-            </p>
-          </div>
-        </MotionItem>
+            <motion.div
+              animate={prefersReduced ? {} : { y: [0, 5, 0] }}
+              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+            >
+              <ChevronDown size={18} strokeWidth={1.5} className="text-[#00E08A]" />
+            </motion.div>
+          </a>
+        </motion.div>
+      </section>
 
-        <MotionItem className="mt-10">
-          <div className="p-6 md:p-8 rounded-[20px] bg-white border border-[#0B0D10]/10 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[#0B0D10]/10">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={24} className="text-[#0B0D10]" />
-                <span className="font-heading font-semibold text-lg text-[#0B0D10]">
-                  Academic Data Requirement Tag
+      {/* 2. THREE EXPERIENCE CARDS */}
+      <section id="experience-cards" className="w-full bg-[#111418]">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-[120px]">
+          <MotionSection alternate={true} className="!py-0 !px-0">
+            <MotionItem>
+              <div className="flex flex-col items-start max-w-2xl mb-12 md:mb-16">
+                <span className="inline-block text-[11px] font-semibold tracking-[0.14em] uppercase text-[#00E08A] mb-3">
+                  Confidence Framework
+                </span>
+                <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#F5F7FA]">
+                  Three steps to clarity.
+                </h2>
+                <p className="mt-4 text-base md:text-lg text-[#9AA3AF] leading-relaxed">
+                  Moving past general EV stereotypes requires honest commute physics, personalized
+                  lifestyle mapping, and unpressured hands-on throttle time.
+                </p>
+              </div>
+            </MotionItem>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              {experienceCards.map((card) => (
+                <MotionItem key={card.num}>
+                  <Link to={card.link} className="block group h-full focus:outline-none">
+                    <Card className="h-full relative overflow-hidden flex flex-col justify-between p-8 group-hover:border-[#00E08A]/40 group-hover:shadow-[0_16px_36px_rgba(0,0,0,0.5)] transition-all duration-300">
+                      {/* Large faint number in corner */}
+                      <span className="absolute top-4 right-6 font-heading font-bold text-6xl sm:text-7xl select-none text-white/[0.04] group-hover:text-[#00E08A]/10 transition-colors pointer-events-none">
+                        {card.num}
+                      </span>
+
+                      <div>
+                        {/* Icon badge */}
+                        <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mb-8 group-hover:border-[#00E08A]/30 group-hover:bg-[#00E08A]/5 transition-colors">
+                          {card.icon}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="font-heading text-xl sm:text-2xl font-semibold text-[#F5F7FA] tracking-tight mb-3 group-hover:text-[#00E08A] transition-colors">
+                          {card.title}
+                        </h3>
+
+                        {/* Description */}
+                        <p className="text-sm md:text-base text-[#9AA3AF] leading-relaxed">
+                          {card.text}
+                        </p>
+                      </div>
+
+                      {/* Bottom action link */}
+                      <div className="pt-8 mt-6 border-t border-white/[0.06] flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#9AA3AF] group-hover:text-[#00E08A] transition-colors">
+                        <span>{card.actionLabel}</span>
+                        <ArrowRight size={16} strokeWidth={1.5} className="group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </Card>
+                  </Link>
+                </MotionItem>
+              ))}
+            </div>
+          </MotionSection>
+        </div>
+      </section>
+
+      {/* 3. LIGHT SECTION: "Don't choose your EV based on someone else's life." */}
+      <section className="w-full bg-[#F4F5F2] text-[#0B0D10]">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-[120px]">
+          <MotionSection lightMode={true} className="!py-0 !px-0">
+            <MotionItem>
+              <div className="max-w-3xl mb-12 md:mb-16">
+                <span className="inline-block text-[11px] font-semibold tracking-[0.14em] uppercase text-[#0B0D10]/70 mb-3 bg-[#0B0D10]/5 px-3 py-1 rounded-full">
+                  Individual Mobility Calibration
+                </span>
+                <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#0B0D10] leading-tight">
+                  Don&rsquo;t choose your EV based on someone else&rsquo;s life.
+                </h2>
+                <p className="mt-4 text-base md:text-lg text-[#0B0D10]/80 leading-relaxed">
+                  Generic EV opinions fail because no two urban routines are identical. The Confidence Engine
+                  evaluates your actual commuting reality across six key variables.
+                </p>
+              </div>
+            </MotionItem>
+
+            {/* Six small tiles with icons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {personalFactors.map((item) => (
+                <MotionItem key={item.title}>
+                  <div className="bg-white rounded-[20px] p-6 border border-[#0B0D10]/10 hover:border-[#0B0D10]/25 transition-all duration-300 h-full flex flex-col justify-between shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-[#0B0D10]/5 flex items-center justify-center mb-4 text-[#0B0D10]">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-heading font-semibold text-lg text-[#0B0D10] mb-1.5">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-[#0B0D10]/75 leading-relaxed">
+                        {item.text}
+                      </p>
+                    </div>
+                  </div>
+                </MotionItem>
+              ))}
+            </div>
+
+            {/* Academic Notice Banner inside light section */}
+            <MotionItem className="mt-10">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#0B0D10]/[0.03] border border-[#0B0D10]/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#0B0D10]/70">
+                <span className="font-medium">
+                  Academic Prototype Standard: All comparisons use objective user inputs rather than speculative specifications.
+                </span>
+                <span className="font-mono font-semibold px-2.5 py-1 rounded bg-white text-[#0B0D10] border border-[#0B0D10]/15 shrink-0">
+                  [VERIFIED ATHER PRODUCT DATA REQUIRED]
                 </span>
               </div>
-              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#0B0D10] text-[#00E08A]">
-                [VERIFIED ATHER PRODUCT DATA REQUIRED]
-              </span>
-            </div>
-            <p className="mt-4 text-sm text-[#0B0D10]/75 leading-relaxed">
-              Every card, calculator, and specification slot that depends on proprietary manufacturer
-              numbers will clearly display this placeholder until verified product feeds are supplied
-              in subsequent phases.
-            </p>
-          </div>
-        </MotionItem>
-      </MotionSection>
-
-      {/* Connected Routes Directory (All 14 routes) */}
-      <MotionSection alternate={true} id="routes">
-        <MotionItem>
-          <SectionHeading
-            eyebrow="Application Architecture"
-            title="All 14 Connected Routes"
-            subtext="All pages are fully routed with React Router, responsive on mobile and desktop, ready for Phase 2 functional content."
-          />
-        </MotionItem>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
-          {allRoutes.map((r, idx) => (
-            <MotionItem key={r.path}>
-              <Link to={r.path} className="block group">
-                <Card className="h-full py-5 px-6 group-hover:border-[#00E08A]/40">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono text-[#00E08A]">
-                      0{idx + 1}
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-white/[0.04] text-[#9AA3AF]">
-                      {r.status}
-                    </span>
-                  </div>
-                  <h4 className="font-heading font-medium text-base text-[#F5F7FA] group-hover:text-[#00E08A] transition-colors flex items-center justify-between">
-                    <span>{r.label}</span>
-                    <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all text-[#00E08A]" />
-                  </h4>
-                </Card>
-              </Link>
             </MotionItem>
-          ))}
+          </MotionSection>
         </div>
-      </MotionSection>
+      </section>
 
-      {/* Demo Leads Snapshot (React Context in Memory) */}
-      <MotionSection alternate={false} id="demo-leads">
-        <MotionItem>
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-            <SectionHeading
-              eyebrow="In-Memory State Store"
-              title="12 Seeded Demo Leads"
-              subtext="Pre-loaded fictional customers for testing digital marketing funnels, lead scoring (15-95), and attribution channels."
-            />
-            <PrimaryButton to="/admin/leads" size="sm">
-              View In Admin Hub
-            </PrimaryButton>
-          </div>
-        </MotionItem>
+      {/* 4. THE JOURNEY STRIP */}
+      <section className="w-full bg-[#0B0D10]">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-[120px]">
+          <MotionSection alternate={false} className="!py-0 !px-0">
+            <MotionItem>
+              <div className="max-w-2xl mb-12 md:mb-16">
+                <span className="inline-block text-[11px] font-semibold tracking-[0.14em] uppercase text-[#00E08A] mb-3">
+                  Behavioral Progression
+                </span>
+                <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.02em] text-[#F5F7FA]">
+                  The Journey to Electric
+                </h2>
+                <p className="mt-4 text-base md:text-lg text-[#9AA3AF] leading-relaxed">
+                  From initial curiosity to a decisive physical road experience. Each stage removes
+                  friction through data-driven confidence.
+                </p>
+              </div>
+            </MotionItem>
 
-        <MotionItem>
-          <div className="overflow-x-auto rounded-[20px] border border-white/[0.06] bg-[#16191E]">
-            <table className="w-full text-left text-sm text-[#9AA3AF]">
-              <thead className="bg-white/[0.02] text-xs uppercase text-[#F5F7FA] border-b border-white/[0.06]">
-                <tr>
-                  <th className="py-4 px-6">Customer</th>
-                  <th className="py-4 px-6">City</th>
-                  <th className="py-4 px-6">Primary Concern</th>
-                  <th className="py-4 px-6">Channel</th>
-                  <th className="py-4 px-6 text-center">Score</th>
-                  <th className="py-4 px-6 text-center">Stage</th>
-                  <th className="py-4 px-6 text-right">Tag</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {leads.slice(0, 6).map((lead) => (
-                  <tr key={lead.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-4 px-6 font-medium text-[#F5F7FA]">
-                      {lead.name}
-                      <span className="block text-xs text-[#9AA3AF] font-normal truncate max-w-[200px]">
-                        {lead.riderProfile}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-[#F5F7FA]">{lead.city}</td>
-                    <td className="py-4 px-6">
-                      <span className="inline-block px-2.5 py-0.5 rounded-full text-xs bg-white/[0.04] text-[#F5F7FA]">
-                        {lead.primaryConcern}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">{lead.source}</td>
-                    <td className="py-4 px-6 text-center">
-                      <span className="font-heading font-semibold text-[#00E08A] tabular-nums">
-                        {lead.leadScore}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-center text-xs">
-                      {lead.journeyStage}
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <Badge variant="DEMO DATA" label={lead.tag} />
-                    </td>
-                  </tr>
+            {/* Horizontal Timeline Strip */}
+            <div className="relative">
+              {/* Connecting Desktop Guideline */}
+              <div className="hidden lg:block absolute top-[28px] left-[40px] right-[40px] h-[1px] bg-gradient-to-r from-white/10 via-[#00E08A]/40 to-white/10" aria-hidden="true" />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 lg:gap-4 relative z-10">
+                {journeyStages.map((stage, idx) => (
+                  <MotionItem key={stage.step}>
+                    <div className="flex flex-col h-full bg-[#16191E] lg:bg-transparent p-5 lg:p-2 rounded-2xl lg:rounded-none border border-white/[0.06] lg:border-none">
+                      {/* Step Indicator Pin */}
+                      <div className="flex items-center gap-3 lg:flex-col lg:items-start mb-3">
+                        <div className="w-10 h-10 rounded-full bg-[#16191E] border border-white/20 flex items-center justify-center font-mono text-xs font-semibold text-[#00E08A] shadow-[0_0_16px_rgba(0,0,0,0.6)]">
+                          {stage.step}
+                        </div>
+                        <h4 className="font-heading font-semibold text-base text-[#F5F7FA]">
+                          {stage.name}
+                        </h4>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-[#9AA3AF] leading-relaxed mt-1">
+                        {stage.desc}
+                      </p>
+                    </div>
+                  </MotionItem>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 text-xs text-[#9AA3AF] text-right">
-            Showing first 6 of 12 seeded leads. Full database accessible in Admin &gt; Leads.
-          </p>
-        </MotionItem>
-      </MotionSection>
+              </div>
+            </div>
+          </MotionSection>
+        </div>
+      </section>
+
+      {/* 5. FINAL CTA SECTION */}
+      <section className="w-full bg-[#111418] border-t border-white/[0.06] relative overflow-hidden">
+        {/* Soft green ambient glow */}
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[250px] pointer-events-none rounded-full blur-[100px] opacity-25 bg-[#00E08A]/35"
+          aria-hidden="true"
+        />
+
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 relative z-10 text-center">
+          <MotionSection alternate={true} className="!py-0 !px-0 flex flex-col items-center">
+            <MotionItem>
+              <span className="inline-block text-[11px] font-semibold tracking-[0.14em] uppercase text-[#00E08A] mb-4">
+                Your Commute. Your Realities.
+              </span>
+            </MotionItem>
+
+            <MotionItem>
+              <h2 className="font-heading text-3xl sm:text-5xl md:text-6xl font-semibold tracking-[-0.02em] text-[#F5F7FA] max-w-4xl leading-[1.12] mx-auto">
+                &ldquo;Don&rsquo;t ask me what scooter I want. Ask me how I live.&rdquo;
+              </h2>
+            </MotionItem>
+
+            <MotionItem className="mt-6">
+              <p className="text-base sm:text-lg text-[#9AA3AF] max-w-xl mx-auto leading-relaxed">
+                Take the 2-minute assessment to unlock your personalized EV confidence score,
+                tailored savings calculation, and direct test-ride voucher.
+              </p>
+            </MotionItem>
+
+            <MotionItem className="mt-10">
+              <PrimaryButton to="/quiz" size="lg" icon={<ArrowRight size={18} strokeWidth={1.5} />}>
+                Find My Ather Match
+              </PrimaryButton>
+            </MotionItem>
+
+            <MotionItem className="mt-8">
+              <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-[#9AA3AF]">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-[#00E08A]" />
+                  Takes 2 minutes
+                </span>
+                <span className="text-white/20">•</span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-[#00E08A]" />
+                  No sales spam
+                </span>
+                <span className="text-white/20">•</span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-[#00E08A]" />
+                  Academic Prototype
+                </span>
+              </div>
+            </MotionItem>
+          </MotionSection>
+        </div>
+      </section>
     </div>
   );
 };

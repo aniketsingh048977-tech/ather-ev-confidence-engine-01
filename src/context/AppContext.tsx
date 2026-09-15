@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   AppStateContextType,
   CustomerProfile,
@@ -93,11 +93,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     },
   ]);
 
-  const updateQuizAnswers = (newAnswers: Partial<QuizAnswers>) => {
+  const updateQuizAnswers = useCallback((newAnswers: Partial<QuizAnswers>) => {
     setQuizAnswers((prev) => ({ ...prev, ...newAnswers }));
-  };
+  }, []);
 
-  const logEvent = (type: string, page: string, metadata?: Record<string, any>) => {
+  const logEvent = useCallback((type: string, page: string, metadata?: Record<string, any>) => {
     const newEvt: UserEvent = {
       id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       timestamp: new Date().toISOString(),
@@ -106,54 +106,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       metadata,
     };
     setEvents((prev) => [newEvt, ...prev].slice(0, 100)); // retain last 100 events
-  };
+  }, []);
 
-  const addTestRide = (rideData: Omit<TestRideBooking, 'id'>) => {
+  const addTestRide = useCallback((rideData: Omit<TestRideBooking, 'id'>) => {
     const newRide: TestRideBooking = {
       ...rideData,
       id: `tr-${Date.now()}`,
     };
     setTestRides((prev) => [newRide, ...prev]);
     logEvent('TEST_RIDE_BOOKED', '/test-ride', { bookingId: newRide.id, city: newRide.city });
-  };
+  }, [logEvent]);
 
-  const updateLead = (id: string, updates: Partial<DemoLead>) => {
+  const updateLead = useCallback((id: string, updates: Partial<DemoLead>) => {
     setLeads((prev) =>
       prev.map((lead) => (lead.id === id ? { ...lead, ...updates } : lead))
     );
-  };
+  }, []);
 
-  const resetToDefault = () => {
+  const resetToDefault = useCallback(() => {
     setLeads(SEEDED_DEMO_LEADS);
     setLeadScore(76);
     setEvents([]);
-  };
+  }, []);
 
   // Initial event
   useEffect(() => {
     logEvent('SESSION_INITIATED', '/', { mode: 'ACADEMIC_PROTOTYPE' });
-  }, []);
+  }, [logEvent]);
+
+  const contextValue = useMemo(
+    () => ({
+      currentCustomer,
+      quizAnswers,
+      riderProfile,
+      leadScore,
+      events,
+      leads,
+      testRides,
+      setCurrentCustomer,
+      updateQuizAnswers,
+      setRiderProfile,
+      setLeadScore,
+      logEvent,
+      addTestRide,
+      updateLead,
+      resetToDefault,
+    }),
+    [
+      currentCustomer,
+      quizAnswers,
+      riderProfile,
+      leadScore,
+      events,
+      leads,
+      testRides,
+      updateQuizAnswers,
+      logEvent,
+      addTestRide,
+      updateLead,
+      resetToDefault,
+    ]
+  );
 
   return (
-    <AppContext.Provider
-      value={{
-        currentCustomer,
-        quizAnswers,
-        riderProfile,
-        leadScore,
-        events,
-        leads,
-        testRides,
-        setCurrentCustomer,
-        updateQuizAnswers,
-        setRiderProfile,
-        setLeadScore,
-        logEvent,
-        addTestRide,
-        updateLead,
-        resetToDefault,
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
