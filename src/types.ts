@@ -56,6 +56,13 @@ export interface CustomerProfile {
   monthlyFuelExpense?: number;
   currentVehicle?: string;
   homeChargingAccess?: boolean;
+  exchangeAppraisal?: {
+    model: string;
+    year: number;
+    estimatedValue: number;
+    switchBonus: number;
+    netMonthlySavings: number;
+  };
 }
 
 export interface QuizAnswers {
@@ -108,6 +115,18 @@ export interface TestRideBooking {
   bookingRef?: string;
   primaryConcern?: string;
   consentTimestamp?: string;
+  rideType?: 'Doorstep VIP' | 'Ather Space Showroom';
+  deliveryAddress?: string;
+  exchangeVehicle?: {
+    make?: string;
+    modelName: string;
+    year: number;
+    condition: string;
+    tradeInCredit: number;
+    switchBonus: number;
+    lockedExpiryDate: string;
+  };
+  netMonthlySavings?: number;
   feedbackReaction?: 'Loved it' | 'Good' | 'Still unsure' | 'Not for me';
   feedbackNotes?: string;
   unresolvedConcern?: string;

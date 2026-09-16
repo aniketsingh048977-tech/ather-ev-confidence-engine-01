@@ -368,7 +368,7 @@ export const QuizPage: React.FC = () => {
       x: 0,
       opacity: 1,
       transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
+        x: { type: 'spring' as const, stiffness: 300, damping: 30 },
         opacity: { duration: 0.25 },
       },
     },
@@ -376,11 +376,11 @@ export const QuizPage: React.FC = () => {
       x: prefersReduced ? 0 : dir > 0 ? -60 : 60,
       opacity: 0,
       transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
+        x: { type: 'spring' as const, stiffness: 300, damping: 30 },
         opacity: { duration: 0.2 },
       },
     }),
-  };
+  } as any;
 
   return (
     <div className="min-h-[calc(100vh-5rem)] flex flex-col justify-center items-center px-4 sm:px-6 py-8 relative overflow-hidden bg-[#0B0D10]">

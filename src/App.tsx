@@ -18,12 +18,14 @@ import { GrainOverlay } from './components/motion/living-backgrounds/GrainOverla
 import { PresentationProvider } from './context/PresentationContext';
 import { PresentationControlBar } from './components/presentation/PresentationControlBar';
 import { PresentationLauncherButton } from './components/presentation/PresentationLauncherButton';
+import { FloatingConversionBar } from './components/conversion/FloatingConversionBar';
 
 // Pages
 import { HomePage } from './pages/HomePage';
 import { QuizPage } from './pages/QuizPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SavingsPage } from './pages/SavingsPage';
+import { SwitchPage } from './pages/SwitchPage';
 import { ChargingPage } from './pages/ChargingPage';
 import { ConciergePage } from './pages/ConciergePage';
 import { TestRidePage } from './pages/TestRidePage';
@@ -61,6 +63,9 @@ const MainContent: React.FC = () => {
                 <Route path="/quiz" element={<QuizPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/savings" element={<SavingsPage />} />
+                <Route path="/switch" element={<SwitchPage />} />
+                <Route path="/switch-and-save" element={<SwitchPage />} />
+                <Route path="/exchange" element={<SwitchPage />} />
                 <Route path="/charging" element={<ChargingPage />} />
                 <Route path="/concierge" element={<ConciergePage />} />
                 <Route path="/test-ride" element={<TestRidePage />} />
@@ -81,6 +86,8 @@ const MainContent: React.FC = () => {
           </div>
         </AnimatePresence>
       </main>
+
+      <FloatingConversionBar />
 
       <Footer />
 

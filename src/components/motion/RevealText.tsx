@@ -58,14 +58,14 @@ export const RevealText: React.FC<RevealTextProps> = ({
 
   const wordVariants = {
     hidden: {
-      y: '110%',
+      y: 12,
       opacity: 0,
     },
     visible: {
-      y: '0%',
+      y: 0,
       opacity: 1,
       transition: {
-        duration: 0.55,
+        duration: 0.45,
         ease: [0.16, 1, 0.3, 1] as const,
       },
     },
@@ -78,20 +78,16 @@ export const RevealText: React.FC<RevealTextProps> = ({
         variants={containerVariants}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, margin: '-20px' }}
+        viewport={{ once: true }}
       >
         {words.map((word, idx) => (
-          <span
+          <motion.span
             key={idx}
-            className="inline-block overflow-hidden align-bottom mr-[0.24em] last:mr-0 pb-[0.08em] -mb-[0.08em]"
+            variants={wordVariants}
+            className="inline-block mr-[0.28em] last:mr-0 will-change-transform"
           >
-            <motion.span
-              variants={wordVariants}
-              className="inline-block will-change-transform"
-            >
-              {word}
-            </motion.span>
-          </span>
+            {word}
+          </motion.span>
         ))}
       </motion.span>
     </Component>

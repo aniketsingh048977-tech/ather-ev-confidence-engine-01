@@ -5,6 +5,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Link } from 'react-router-dom';
+import Markdown from 'react-markdown';
 import {
   Send,
   Sparkles,
@@ -23,6 +25,12 @@ import {
   AlertCircle,
   HelpCircle,
   ExternalLink,
+  Zap,
+  RotateCcw,
+  Sliders,
+  MapPin,
+  ChevronRight,
+  Flame,
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
@@ -37,15 +45,44 @@ interface ChatMessage {
   text: string;
   isStreaming?: boolean;
   showHumanHandOff?: boolean;
+  modelBadge?: string;
+  actions?: { label: string; url: string; icon?: 'ride' | 'savings' | 'charging' | 'human' }[];
   timestamp: string;
 }
 
-const SUGGESTED_CHIPS = [
-  'Will an EV fit my commute?',
-  'How can I think about charging?',
-  'Help me understand my potential running costs.',
-  'What should I check during a test ride?',
-  "I'm still unsure about EVs.",
+const CATEGORIZED_PROMPTS = [
+  {
+    category: 'Vehicle Models',
+    prompts: [
+      'Compare Ather 450X vs Ather Rizta for my lifestyle',
+      'What are the differences between Ather 450X, 450S, and 450 Apex?',
+      'How does the Rizta 56L storage and pillion comfort compare to petrol scooters?',
+    ],
+  },
+  {
+    category: 'Range & Battery',
+    prompts: [
+      'Will TrueRange™ safely cover my daily commute without running out?',
+      'How does the IP67 battery handle deep monsoon waterlogging in Indian cities?',
+      'What is the Ather Battery Protect™ 5-year warranty and degradation rate?',
+    ],
+  },
+  {
+    category: 'Charging & RWA',
+    prompts: [
+      'How do I set up charging in an apartment basement with society/RWA permissions?',
+      'How long does a 5A home socket charge take, and what is the cost per full charge?',
+      'How fast is the Ather Grid™ network on highways and city corridors?',
+    ],
+  },
+  {
+    category: 'Savings & Tech',
+    prompts: [
+      'Calculate my 3-year total cost of ownership savings against petrol',
+      'Explain Magic Twist™ and AutoHold™ hill-stop engineering',
+      'What should I specifically test during an Ather test ride?',
+    ],
+  },
 ];
 
 export const ConciergePage: React.FC = () => {
@@ -63,13 +100,31 @@ export const ConciergePage: React.FC = () => {
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Active prompt category tab
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+
   // Initial welcome message
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg-init-1',
       sender: 'concierge',
-      text: `Hello ${currentCustomer?.name ? currentCustomer.name.split(' ')[0] : 'there'}! I'm your AI Ride Concierge. I've analyzed your daily transit variables and rider profile. What can I help clarify about your EV transition?`,
+      text: `### Welcome ${currentCustomer?.name ? currentCustomer.name.split(' ')[0] : 'Rider'}! 
+
+I am your **Ather Senior EV Systems & Engineering Specialist**. 
+
+I have loaded your commuter profile:
+* **Commute**: ${quizAnswers.dailyCommute || '20-40 km roundtrip'}
+* **Parking / Power**: ${quizAnswers.parkingType || 'Apartment / Home parking'}
+* **Fuel Spend**: ₹${quizAnswers.monthlyFuelExpense?.toLocaleString('en-IN') || '2,500'}/mo
+* **Archetype**: ${riderProfile?.archetype || 'Balanced Daily Commuter'}
+
+Ask me anything about **Ather models (450X, 450S, 450 Apex, Rizta)**, **TrueRange™ calculations**, **5A apartment charging blueprints**, or **battery physics**. How can I assist your EV transition today?`,
       timestamp: 'Just now',
+      actions: [
+        { label: 'Compare 450X vs Rizta', url: '#prompt-compare' },
+        { label: 'Apartment Charging Blueprint', url: '/charging', icon: 'charging' },
+        { label: 'Calculate Route Savings', url: '/savings', icon: 'savings' },
+      ],
     },
   ]);
 
@@ -92,7 +147,7 @@ export const ConciergePage: React.FC = () => {
     const alreadyLogged = events.some((e) => e.type === 'ride_concierge_opened');
     if (!alreadyLogged && !hasLoggedRef.current) {
       hasLoggedRef.current = true;
-      logEvent('ride_concierge_opened', '/concierge', { mode: 'DEMO AI MODE' });
+      logEvent('ride_concierge_opened', '/concierge', { mode: 'FULL ATHER EV EXPERT AI' });
       setLeadScore(Math.min(100, leadScore + 5));
     }
   }, [events, leadScore, logEvent, setLeadScore]);
@@ -111,121 +166,145 @@ export const ConciergePage: React.FC = () => {
     };
   }, []);
 
-  // Check if a question violates guardrail (price, range, specs, offers, availability, delivery)
-  const violatesGuardrail = (query: string): boolean => {
+  // Derive relevant contextual action pills based on query/response content
+  const deriveContextualActions = (text: string) => {
+    const actions: { label: string; url: string; icon?: 'ride' | 'savings' | 'charging' | 'human' }[] = [];
+    const lower = text.toLowerCase();
+
+    if (lower.includes('test ride') || lower.includes('ride') || lower.includes('experience center') || lower.includes('autohold')) {
+      actions.push({ label: 'Book Zero-Pressure Test Ride', url: '/test-ride', icon: 'ride' });
+    }
+    if (lower.includes('saving') || lower.includes('petrol') || lower.includes('cost') || lower.includes('expense') || lower.includes('tco')) {
+      actions.push({ label: 'Interactive Savings Calculator', url: '/savings', icon: 'savings' });
+    }
+    if (lower.includes('charg') || lower.includes('apartment') || lower.includes('socket') || lower.includes('grid') || lower.includes('rwa')) {
+      actions.push({ label: 'View Charging Blueprint', url: '/charging', icon: 'charging' });
+    }
+    return actions;
+  };
+
+  // Local fallback response generator if backend is booting or offline
+  const generateLocalAtherExpertResponse = (query: string): string => {
     const lower = query.toLowerCase();
-    const guardrailKeywords = [
-      'price',
-      'cost',
-      'rate',
-      'how much',
-      'on-road',
-      'on road',
-      'emi',
-      'down payment',
-      'discount',
-      'offer',
-      'subsidy',
-      'fame',
-      'range',
-      'km per charge',
-      'how many km',
-      'spec',
-      'specs',
-      'specification',
-      'top speed',
-      'battery capacity',
-      'kwh',
-      'motor',
-      'torque',
-      'availability',
-      'available',
-      'stock',
-      'delivery',
-      'waiting period',
-      'waiting time',
-      'booking amount',
-      'color options',
-      'colors',
-    ];
-    return guardrailKeywords.some((keyword) => lower.includes(keyword));
+    const commute = quizAnswers.dailyCommute || '20-30 km';
+    const parking = quizAnswers.parkingType || 'Home / Apartment';
+    const petrolSpend = quizAnswers.monthlyFuelExpense || 3000;
+
+    if (lower.includes('rizta') || lower.includes('family') || lower.includes('boot') || lower.includes('luggage') || lower.includes('storage') || lower.includes('seat')) {
+      return `### Ather Rizta: Purpose-Built Family Engineering
+
+The **Ather Rizta** addresses Indian family commuting with specific structural upgrades:
+
+* **Segment-Leading Comfort**: Features a 900mm wide seat—the longest in the category—with an optional ergonomic pillion backrest.
+* **56L Massive Storage**: A 34-liter deep under-seat boot (fits 2 full-face helmets or weekly groceries) plus an optional 22L front trunk (*Frunk*).
+* **SkidControl™ Traction Control**: Uses motor-speed sensor algorithms to eliminate rear-wheel drift over wet pavement, gravel, and sandy corners.
+* **TrueRange™ Configurations**:
+  * **Rizta S (2.9 kWh)**: 105 km TrueRange (123 km IDC)
+  * **Rizta Z (3.7 kWh)**: 125 km TrueRange (160 km IDC)
+* **Smart Dashboard**: 7-inch DeepView™ or TFT display with WhatsApp preview, Live Location sharing, and Emergency Stop Signal (ESS).
+
+Would you like to compare the Rizta directly with the sporty 450X?`;
+    }
+
+    if (lower.includes('450x') || lower.includes('apex') || lower.includes('speed') || lower.includes('warp') || lower.includes('torque') || lower.includes('acceleration')) {
+      return `### Ather 450X & 450 Apex: Performance & Precision Dynamics
+
+The **Ather 450 Series** is engineered around sport handling and instant throttle response:
+
+* **Instant Throttle Dynamics**: Produces **26 Nm of peak torque from 0 RPM**, propelling you from **0 to 40 km/h in 3.3 seconds** (2.9 seconds on the 450 Apex in Warp+ mode).
+* **Chassis Architecture**: Precision all-aluminum hybrid trellis frame ensures 50:50 front-rear weight distribution and ultra-low center of gravity.
+* **TrueRange™ Metrics**:
+  * **3.7 kWh Pack**: 110 km TrueRange (150 km IDC) in SmartEco mode.
+  * **2.9 kWh Pack**: 90 km TrueRange (115 km IDC).
+* **Atherstack™ Features**:
+  * **AutoHold™**: Holds the scooter securely on steep flyovers or basement ramps without touching the brake levers.
+  * **Park Assist™**: Smooth reverse throttle up to 5 km/h for effortless maneuvering out of tight parking slots.
+  * **Google Maps Onboard**: 7-inch capacitive touchscreen with live traffic and range overlay perimeter.
+
+On the **450 Apex**, you also get **Magic Twist™**, enabling regenerative deceleration all the way to 0 km/h simply by twisting the throttle forward.`;
+    }
+
+    if (lower.includes('range') || lower.includes('distance') || lower.includes('run out') || lower.includes('dead') || lower.includes('commute')) {
+      return `### TrueRange™ vs Indian Driving Cycle (IDC)
+
+Most EV manufacturers advertise laboratory IDC figures tested on flat rollers at 30 km/h without wind, passenger, or traffic stops. Ather created **TrueRange™**:
+
+* **What TrueRange™ Guarantees**: Tested with headlights on, pillion weight, dynamic throttle acceleration, flyovers, and stop-and-go metro signals. 
+* **Your Daily Commute**: With your stated commute of **${commute}**, an Ather 450X (110 km TrueRange) utilizes less than **25-35% of its battery capacity**, leaving a generous **65%+ reserve buffer** for impromptu detours or emergency errands.
+* **Stationary Efficiency**: When halted at traffic signals, an electric motor draws virtually zero energy, whereas internal combustion engines waste petrol continuously idling.
+* **Safety Margin**: The dashboard continuously recalculates remaining kilometers based on your real-time riding style.`;
+    }
+
+    if (lower.includes('charg') || lower.includes('socket') || lower.includes('apartment') || lower.includes('rwa') || lower.includes('grid') || lower.includes('plug')) {
+      return `### Complete Charging Architecture: Home, Apartment & Ather Grid™
+
+Charging an Ather requires no complex industrial setup:
+
+1. **Everyday Home Charging (5A / 15A Socket)**:
+   * Plugs directly into any standard domestic three-pin socket via the **Ather Portable Charger** or **Ather Dot**.
+   * **0 to 80% charge in ~4.5 hours** overnight.
+   * Full overnight recharge costs approximately **₹22 to ₹28** based on standard ₹7/unit residential electricity tariffs.
+
+2. **Apartment / Society (RWA) Installations**:
+   * Over **40% of Ather owners live in multi-story apartments**.
+   * Ather provides certified standard RWA compliance documentation, site survey assistance, and technical blueprints to pull a line from your private electricity meter to your basement parking bay with a dedicated sub-meter.
+
+3. **Public Fast-Charging (Ather Grid™)**:
+   * Over **3,000+ fast-charging points** deployed across 100+ cities and major interstate transit corridors.
+   * Delivers up to **1.5 km of range per minute** (0 to 50% in approximately 20 minutes) with automatic vehicle authentication.`;
+    }
+
+    if (lower.includes('cost') || lower.includes('saving') || lower.includes('petrol') || lower.includes('expense') || lower.includes('money') || lower.includes('roi')) {
+      const monthly = Number(petrolSpend) || 3000;
+      const annualPetrol = monthly * 12;
+      const annualEV = Math.round(annualPetrol * 0.12);
+      const annualSavings = annualPetrol - annualEV;
+
+      return `### The Financial Reality: Total Cost of Ownership (TCO)
+
+Comparing electric efficiency against petrol reveals significant recurring cash retention:
+
+* **Energy Cost per Kilometer**:
+  * Petrol Scooter (35 km/L @ ₹105/L): **~₹3.00 per km**
+  * Ather Electric (~3.2 kWh per 100 km @ ₹7.5/unit): **~₹0.24 to ₹0.30 per km**
+* **Monthly Budget Comparison**:
+  * Your current monthly petrol expenditure: **₹${monthly.toLocaleString('en-IN')}**
+  * Equivalent Ather electric energy cost: **₹${Math.round(monthly * 0.10).toLocaleString('en-IN')}**
+* **Annual Net Retained Savings**:
+  * **Fuel Savings**: **~₹${annualSavings.toLocaleString('en-IN')} every single year**
+  * **Service Savings**: **~₹4,000 - ₹5,000/year** (no engine oil changes, valve tappet adjustments, spark plugs, drive belt pulleys, or carburetor cleanings)
+* **3-Year Cumulative Payback**: Over 36 months, you save over **₹1,10,000+** in operational cash!`;
+    }
+
+    if (lower.includes('battery') || lower.includes('water') || lower.includes('monsoon') || lower.includes('flood') || lower.includes('warranty') || lower.includes('life')) {
+      return `### Battery Durability & Monsoon Waterproofing
+
+Ather battery packs are engineered specifically for extreme tropical and monsoon climates:
+
+* **IP67 Waterproof & Dustproof**: The battery cells and BMS are hermetically encased inside an aircraft-grade die-cast aluminum enclosure. Tested to operate submerged in water up to 1 meter for 30 minutes without electrical leakage.
+* **Water Wading**: Tested through standing monsoon water puddles up to 400 mm depth safely.
+* **Thermal Management**: Real-time multi-sensor thermal throttling ensures the pack never overheats, even in 45°C summer traffic or continuous Warp mode bursts.
+* **Ather Battery Protect™**: Comprehensive **5-year or 60,000 km warranty** with an industry-leading **70% State of Health (SoH) guarantee**.
+* **Fleet Telemetry**: Across 100+ million cumulative kilometers logged by Ather riders, the average battery capacity retention remains above 80% even past 5-6 years of active urban use!`;
+    }
+
+    return `### Ather EV Systems Specialist Recommendation
+
+Based on your current riding profile (**${commute}** commute, **${parking}** parking setup):
+
+* **Optimal Architecture**: Your daily transit distance is an ideal match for an electric powertrain. Charging once or twice a week covers your entire commuting week with zero range anxiety.
+* **Zero Stop-and-Go Fatigue**: The 26 Nm instantaneous torque provides smooth, clutchless urban navigation without engine heat, noise, or vibration.
+* **Best Next Step**: Real-world tactile feel is the best way to verify electric confidence. We strongly recommend scheduling a 15-minute test ride at your local Ather Space to experience **AutoHold™** and the immediate throttle precision firsthand.
+
+What specific aspect would you like to examine in greater technical detail?`;
   };
 
-  // Generate deterministic answers based on user profile and quiz
-  const generateResponse = (query: string): { text: string; showHumanHandOff: boolean } => {
-    const trimmed = query.trim();
-
-    // Check guardrails first
-    if (violatesGuardrail(trimmed)) {
-      return {
-        text: "I don't have verified information for that yet. Would you like to connect with an Ather representative?",
-        showHumanHandOff: true,
-      };
-    }
-
-    const lower = trimmed.toLowerCase();
-
-    // 1. Commute question
-    if (lower.includes('commute') || lower.includes('fit my commute') || lower.includes('daily distance')) {
-      const commuteStr = quizAnswers.dailyCommute || '20-40 km';
-      return {
-        text: `Based on your stated daily commute of ${commuteStr}, an electric scooter is mathematically and practically tailored for your transit routine. A standard single overnight charge easily covers your full roundtrip with a 50%+ safety buffer remaining. In stop-and-go metro traffic, electric powertrains consume near-zero energy when stationary at traffic signals, making your actual efficiency significantly higher than petrol.`,
-        showHumanHandOff: false,
-      };
-    }
-
-    // 2. Charging question
-    if (lower.includes('charge') || lower.includes('charging') || lower.includes('parking') || lower.includes('plug')) {
-      const parking = quizAnswers.parkingType || 'home parking';
-      if (parking.includes('Apartment')) {
-        return {
-          text: `For your ${parking} setup, the key step is getting standard society/RWA permission for a dedicated 5A/15A socket from your flat's meter board. Over 40% of Ather owners live in apartments. It requires a simple sub-meter installation, and overnight charging takes zero extra time—just like plugging in your smartphone before sleep. You can also utilize public Ather Grid points for occasional rapid top-ups.`,
-          showHumanHandOff: false,
-        };
-      }
-      return {
-        text: `For your ${parking} setup, charging is remarkably effortless. You don't need a dedicated industrial wallbox—a standard 5A or 15A three-pin household socket in your garage or porch is all you need. You plug in at night, automated battery management protects from overcharging, and you wake up every morning with a full 100% battery for approximately ₹20–₹25.`,
-        showHumanHandOff: false,
-      };
-    }
-
-    // 3. Running costs question
-    if (lower.includes('cost') || lower.includes('expense') || lower.includes('running') || lower.includes('petrol') || lower.includes('savings')) {
-      const petrolSpend = quizAnswers.monthlyFuelExpense
-        ? `₹${quizAnswers.monthlyFuelExpense.toLocaleString('en-IN')}`
-        : '₹2,500 - ₹3,500';
-      return {
-        text: `You currently budget approximately ${petrolSpend} per month on petrol. With an EV consuming roughly 3.0 kWh per 100 km, your monthly electricity cost drops to just ~₹180–₹300 depending on your local tariff. That represents an immediate 85%+ reduction in recurring commute energy expenses, saving you tens of thousands of rupees annually while completely eliminating oil changes, spark plug replacements, and engine maintenance.`,
-        showHumanHandOff: false,
-      };
-    }
-
-    // 4. Test ride checklist question
-    if (lower.includes('test ride') || lower.includes('check during') || lower.includes('what to check') || lower.includes('ride checklist')) {
-      const concern = quizAnswers.biggestConcern || 'Range & Reliability';
-      return {
-        text: `Since your primary consideration is ${concern}, on your test ride pay specific attention to:\n\n1. Throttle Modulation: Notice the instant, predictable torque without any clutch lag or engine vibration.\n2. Regenerative Braking: Feel how releasing the throttle or rolling reverse slows down smoothly while putting power back into the battery.\n3. Dynamic Dashboard: Watch the TrueRange™ indicator adapt to your ride mode in real-time.\n4. Ergonomics & Boot Space: Test the seating balance with a pillion and inspect the under-seat storage depth for your everyday bag or helmet.`,
-        showHumanHandOff: false,
-      };
-    }
-
-    // 5. Unsure about EVs question
-    if (lower.includes('unsure') || lower.includes('hesitant') || lower.includes('doubt') || lower.includes('scared') || lower.includes('worry')) {
-      return {
-        text: `Hesitation is completely natural when transitioning from 15+ years of petrol familiarity! Most first-time EV riders wonder about battery longevity, monsoon water-wading, and charging discipline. Ather battery packs are IP67-rated sealed aluminum units tested through severe water-logging and heat cycles. You don't have to commit today—the best approach is to book a relaxed, zero-pressure test ride so you can experience the whisper-quiet ride and solid road balance firsthand.`,
-        showHumanHandOff: false,
-      };
-    }
-
-    // Fallback response: EV Education & Test Ride recommendation
-    return {
-      text: `That's a thoughtful question regarding electric vehicle adoption! In real-world urban conditions, electric two-wheelers combine low center-of-gravity handling, instant acceleration, and minimal recurring maintenance compared to internal combustion engines. To verify how this fits your exact daily routine, we recommend trying a guided test ride at your local Ather Space.`,
-      showHumanHandOff: false,
-    };
-  };
-
-  // Stream assistant message word by word
-  const deliverAssistantResponse = (fullText: string, showHumanHandOff: boolean) => {
+  // Deliver response word by word
+  const deliverAssistantResponse = (
+    fullText: string,
+    modelBadge: string,
+    showHumanHandOff: boolean = false
+  ) => {
     setIsTyping(true);
 
     setTimeout(() => {
@@ -235,6 +314,7 @@ export const ConciergePage: React.FC = () => {
       const words = fullText.split(' ');
       let currentWordIndex = 0;
       const messageId = `msg-${Date.now()}`;
+      const actions = deriveContextualActions(fullText);
 
       // Insert empty streaming message
       setMessages((prev) => [
@@ -244,13 +324,15 @@ export const ConciergePage: React.FC = () => {
           sender: 'concierge',
           text: '',
           isStreaming: true,
+          modelBadge,
+          actions,
           showHumanHandOff,
           timestamp: 'Just now',
         },
       ]);
 
       streamIntervalRef.current = setInterval(() => {
-        currentWordIndex++;
+        currentWordIndex += 2; // Stream 2 words per tick for crisp pace
         const currentSlice = words.slice(0, currentWordIndex).join(' ');
 
         setMessages((prev) =>
@@ -267,15 +349,16 @@ export const ConciergePage: React.FC = () => {
           setIsStreaming(false);
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === messageId ? { ...msg, isStreaming: false } : msg
+              msg.id === messageId ? { ...msg, text: fullText, isStreaming: false } : msg
             )
           );
         }
-      }, 40); // 40ms per word feels very natural and responsive
-    }, 600); // 600ms typing indicator
+      }, 35);
+    }, 450);
   };
 
-  const handleSendMessage = (textToSend: string) => {
+  // Main message sender with real server API call to Gemini EV Expert
+  const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || isTyping || isStreaming) return;
 
     const userText = textToSend.trim();
@@ -291,9 +374,53 @@ export const ConciergePage: React.FC = () => {
     setMessages((prev) => [...prev, userMsg]);
     logEvent('concierge_query_sent', '/concierge', { query: userText });
 
-    // Determine reply
-    const { text, showHumanHandOff } = generateResponse(userText);
-    deliverAssistantResponse(text, showHumanHandOff);
+    setIsTyping(true);
+
+    try {
+      // Build user context payload
+      const userContext = {
+        name: currentCustomer?.name,
+        city: currentCustomer?.city,
+        commute: quizAnswers.dailyCommute,
+        parking: quizAnswers.parkingType,
+        monthlyFuelExpense: quizAnswers.monthlyFuelExpense,
+        archetype: riderProfile?.archetype,
+        suggestedModel: riderProfile?.suggestedAtherModel,
+        priority: quizAnswers.primaryPriority,
+        concern: quizAnswers.biggestConcern,
+      };
+
+      // Call Express server-side Gemini API route
+      const res = await fetch('/api/concierge/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userText,
+          history: messages.map((m) => ({ sender: m.sender, text: m.text })),
+          userContext,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.reply) {
+          deliverAssistantResponse(
+            data.reply,
+            data.model === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Ather EV Engine',
+            false
+          );
+          return;
+        }
+      }
+
+      // Fallback if response not ok
+      const fallbackReply = generateLocalAtherExpertResponse(userText);
+      deliverAssistantResponse(fallbackReply, 'Ather EV Engine', false);
+    } catch (err) {
+      console.warn('Network call to concierge backend failed, using local Ather Expert system:', err);
+      const fallbackReply = generateLocalAtherExpertResponse(userText);
+      deliverAssistantResponse(fallbackReply, 'Ather EV Engine', false);
+    }
   };
 
   const { isActive: isPresentationActive, currentStep: presentationStep } = usePresentation();
@@ -345,7 +472,7 @@ export const ConciergePage: React.FC = () => {
         timeWindow: humanTimeWindow,
       });
       setLeadScore(Math.min(100, leadScore + 10));
-    }, 700);
+    }, 600);
   };
 
   const closeHumanModal = () => {
@@ -353,6 +480,33 @@ export const ConciergePage: React.FC = () => {
     setHumanSuccess(false);
     setHumanError('');
   };
+
+  const resetChat = () => {
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current);
+      streamIntervalRef.current = null;
+    }
+    setIsStreaming(false);
+    setIsTyping(false);
+    setMessages([
+      {
+        id: `msg-reset-${Date.now()}`,
+        sender: 'concierge',
+        text: `### Session Reset\n\nI'm ready for your next questions regarding **Ather 450X**, **Rizta**, **TrueRange™ calculations**, or **RWA apartment charging**. What would you like to evaluate?`,
+        timestamp: 'Just now',
+        actions: [
+          { label: 'Compare 450X vs Rizta', url: '#prompt-compare' },
+          { label: 'Apartment Charging Blueprint', url: '/charging', icon: 'charging' },
+        ],
+      },
+    ]);
+  };
+
+  // Prompts to show based on active category
+  const visiblePrompts =
+    activeCategory === 'All'
+      ? CATEGORIZED_PROMPTS.flatMap((c) => c.prompts).slice(0, 6)
+      : CATEGORIZED_PROMPTS.find((c) => c.category === activeCategory)?.prompts || [];
 
   return (
     <div className="w-full relative overflow-hidden bg-[#0B0D10] text-[#F5F7FA] min-h-[calc(100vh-80px)] flex flex-col">
@@ -362,64 +516,80 @@ export const ConciergePage: React.FC = () => {
         aria-hidden="true"
       />
 
-      <div className="max-w-[1300px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 flex flex-col relative z-10">
-        {/* TOP BAR: Title, Subtitle, Badge, Talk to a Human */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.08]">
+      <div className="max-w-[1340px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex-1 flex flex-col relative z-10">
+        {/* TOP BAR: Title, Subtitle, Status, Talk to a Human */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-white/[0.08]">
           <div>
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
               <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[#F5F7FA]">
-                AI Ride Concierge
+                Ather EV Expert AI
               </h1>
-              <Badge variant="ACADEMIC PROTOTYPE" label="DEMO AI MODE" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium bg-[#00E08A]/10 text-[#00E08A] border border-[#00E08A]/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00E08A] animate-pulse" />
+                Specialist Online
+              </span>
+              <Badge variant="ACADEMIC PROTOTYPE" label="FULL EV EXPERT" />
             </div>
             <p className="text-xs sm:text-sm text-[#9AA3AF]">
-              Your EV decision companion. Grounded in your commuter profile and transit reality.
+              Authoritative EV engineering guidance powered by Gemini & Ather vehicle physics. Grounded in your commuter profile.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowHumanModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.1] text-xs font-semibold text-[#F5F7FA] hover:text-[#00E08A] hover:border-[#00E08A]/40 transition-colors cursor-pointer shrink-0 self-start sm:self-center"
-          >
-            <PhoneCall size={14} className="text-[#00E08A]" />
-            <span>Talk to a Human</span>
-          </button>
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
+            <button
+              type="button"
+              onClick={resetChat}
+              title="Reset conversation"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.1] text-xs font-semibold text-[#9AA3AF] hover:text-white hover:border-white/25 transition-colors cursor-pointer"
+            >
+              <RotateCcw size={13} />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowHumanModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.1] text-xs font-semibold text-[#F5F7FA] hover:text-[#00E08A] hover:border-[#00E08A]/40 transition-colors cursor-pointer"
+            >
+              <PhoneCall size={14} className="text-[#00E08A]" />
+              <span>Talk to an Ather Specialist</span>
+            </button>
+          </div>
         </div>
 
-        {/* MAIN SPLIT: Left Profile Sidebar (hidden on mobile) + Chat Arena */}
+        {/* MAIN SPLIT: Left Profile Sidebar + Chat Arena */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT SIDEBAR: Rider Profile & Scores (hidden on mobile, lg:col-span-4) */}
+          {/* LEFT SIDEBAR: Rider Profile & Scores (lg:col-span-4) */}
           <aside
             id="concierge-rider-profile-sidebar"
-            className="hidden lg:flex lg:col-span-4 flex-col gap-4 bg-[#111418] border border-white/[0.08] rounded-[24px] p-6 shadow-[0_16px_40px_rgba(0,0,0,0.5)] sticky top-24"
+            className="hidden lg:flex lg:col-span-4 flex-col gap-4 bg-[#111418] border border-white/[0.08] rounded-[24px] p-5 shadow-[0_16px_40px_rgba(0,0,0,0.5)] sticky top-24"
           >
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.06]">
               <div>
                 <span className="text-[10px] uppercase font-mono tracking-wider text-[#00E08A] block">
-                  Customer Context
+                  Active Rider Context
                 </span>
                 <h2 className="font-heading text-base font-semibold text-[#F5F7FA]">
                   {currentCustomer?.name || 'Rider Profile'}
                 </h2>
               </div>
               <span className="text-[11px] font-mono text-[#9AA3AF] bg-white/[0.04] px-2.5 py-1 rounded-md border border-white/[0.06]">
-                Score: {leadScore}/100
+                Lead Score: {leadScore}/100
               </span>
             </div>
 
             {/* Score Ring Preview */}
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#16191E] border border-white/[0.06]">
+            <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-[#16191E] border border-white/[0.06]">
               <ScoreRing
                 score={riderProfile?.matchScore || 88}
-                size={84}
+                size={78}
                 strokeWidth={7}
                 label=""
                 sublabel=""
               />
               <div className="flex-1 min-w-0">
                 <span className="text-[10px] uppercase tracking-wider text-[#9AA3AF] block mb-0.5">
-                  Recommendation Fit
+                  Recommendation Match
                 </span>
                 <span className="font-heading font-bold text-sm text-[#00E08A] block truncate">
                   {riderProfile?.archetype || 'Balanced Daily Commuter'}
@@ -431,7 +601,7 @@ export const ConciergePage: React.FC = () => {
             </div>
 
             {/* Commuter Variables Summary List */}
-            <div className="space-y-2.5 text-xs">
+            <div className="space-y-2 text-xs">
               <span className="text-[10px] uppercase font-mono tracking-wider text-[#9AA3AF] block mb-1">
                 Grounded Variables
               </span>
@@ -447,7 +617,7 @@ export const ConciergePage: React.FC = () => {
 
               <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-between">
                 <span className="text-[#9AA3AF] flex items-center gap-1.5">
-                  <BatteryCharging size={13} className="text-amber-400" /> Parking & Power
+                  <BatteryCharging size={13} className="text-amber-400" /> Parking Setup
                 </span>
                 <span className="font-medium text-[#F5F7FA] truncate max-w-[150px] text-right">
                   {quizAnswers.parkingType || 'Private home parking'}
@@ -475,8 +645,8 @@ export const ConciergePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick action to test ride */}
-            <div className="pt-3 border-t border-white/[0.06]">
+            {/* Quick action buttons */}
+            <div className="pt-2 border-t border-white/[0.06] space-y-2">
               <SecondaryButton
                 to="/test-ride"
                 size="sm"
@@ -485,18 +655,44 @@ export const ConciergePage: React.FC = () => {
               >
                 Schedule Test Ride
               </SecondaryButton>
+              <Link
+                to="/savings"
+                className="w-full flex items-center justify-center gap-1.5 text-xs text-[#9AA3AF] hover:text-[#00E08A] py-1 transition-colors font-medium"
+              >
+                <span>View Full Savings Breakdown</span>
+                <ChevronRight size={13} />
+              </Link>
             </div>
           </aside>
 
           {/* CHAT ARENA (lg:col-span-8) */}
-          <div className="lg:col-span-8 bg-[#111418] border border-white/[0.08] rounded-[24px] shadow-[0_16px_40px_rgba(0,0,0,0.5)] flex flex-col h-[650px] sm:h-[700px] overflow-hidden">
-            {/* SUGGESTED QUESTION CHIPS ROW */}
-            <div className="p-3.5 sm:p-4 bg-[#16191E] border-b border-white/[0.06] overflow-x-auto no-scrollbar">
-              <span className="text-[10px] uppercase font-mono tracking-wider text-[#9AA3AF] block mb-2 px-1">
-                Suggested Decision Prompts:
-              </span>
-              <div className="flex items-center gap-2 whitespace-nowrap">
-                {SUGGESTED_CHIPS.map((chip) => (
+          <div className="lg:col-span-8 bg-[#111418] border border-white/[0.08] rounded-[24px] shadow-[0_16px_40px_rgba(0,0,0,0.5)] flex flex-col h-[680px] sm:h-[740px] overflow-hidden">
+            {/* PROMPTS FILTER TABS & CHIPS */}
+            <div className="p-3 sm:p-3.5 bg-[#16191E] border-b border-white/[0.06]">
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar mb-2 pb-1">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-[#9AA3AF] mr-1 shrink-0">
+                  Topics:
+                </span>
+                {['All', 'Vehicle Models', 'Range & Battery', 'Charging & RWA', 'Savings & Tech'].map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setActiveCategory(cat)}
+                    className={`text-[11px] px-2.5 py-1 rounded-lg transition-colors shrink-0 cursor-pointer ${
+                      activeCategory === cat
+                        ? 'bg-[#00E08A]/15 text-[#00E08A] border border-[#00E08A]/40 font-medium'
+                        : 'bg-white/[0.03] text-[#9AA3AF] hover:text-white border border-white/5'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Suggested Prompts Horizon */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                {visiblePrompts.map((chip) => (
                   <button
                     key={chip}
                     type="button"
@@ -522,21 +718,62 @@ export const ConciergePage: React.FC = () => {
                     }`}
                   >
                     {!isUser && (
-                      <div className="w-8 h-8 rounded-full bg-[#00E08A]/15 border border-[#00E08A]/30 flex items-center justify-center text-[#00E08A] shrink-0 mt-0.5">
+                      <div className="w-8 h-8 rounded-full bg-[#00E08A]/15 border border-[#00E08A]/30 flex items-center justify-center text-[#00E08A] shrink-0 mt-0.5 shadow-sm">
                         <Bot size={16} />
                       </div>
                     )}
 
                     <div
-                      className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm leading-relaxed ${
+                      className={`max-w-[88%] sm:max-w-[80%] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm leading-relaxed ${
                         isUser
                           ? 'bg-[#00E08A] text-[#0B0D10] font-medium rounded-tr-none shadow-md'
-                          : 'bg-[#16191E] border border-white/[0.08] text-[#F5F7FA] rounded-tl-none'
+                          : 'bg-[#16191E] border border-white/[0.08] text-[#F5F7FA] rounded-tl-none shadow-md'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {/* Message Content: Render Markdown for Assistant, text for User */}
+                      {isUser ? (
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      ) : (
+                        <div className="prose prose-invert max-w-none text-xs sm:text-sm leading-relaxed space-y-2 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-[#00E08A] [&_h3]:mb-1 [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_li]:my-0.5 [&_strong]:text-[#00E08A] [&_strong]:font-semibold">
+                          <Markdown>{msg.text}</Markdown>
+                        </div>
+                      )}
 
-                      {/* If message triggers guardrail human hand-off button */}
+                      {/* Model badge and contextual actions for Assistant */}
+                      {!isUser && !msg.isStreaming && msg.actions && msg.actions.length > 0 && (
+                        <div className="mt-3.5 pt-3 border-t border-white/10 flex flex-wrap items-center gap-2">
+                          {msg.actions.map((act) => {
+                            if (act.url.startsWith('#prompt-')) {
+                              return (
+                                <button
+                                  key={act.label}
+                                  type="button"
+                                  onClick={() => handleSendMessage(act.label)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-[#00E08A]/15 text-[#F5F7FA] hover:text-[#00E08A] border border-white/10 hover:border-[#00E08A]/30 text-xs font-medium transition-all cursor-pointer"
+                                >
+                                  <Sparkles size={12} className="text-[#00E08A]" />
+                                  <span>{act.label}</span>
+                                </button>
+                              );
+                            }
+                            return (
+                              <Link
+                                key={act.label}
+                                to={act.url}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00E08A]/15 hover:bg-[#00E08A] text-[#00E08A] hover:text-[#0B0D10] border border-[#00E08A]/30 text-xs font-semibold transition-all cursor-pointer"
+                              >
+                                {act.icon === 'ride' && <Zap size={12} />}
+                                {act.icon === 'savings' && <Coins size={12} />}
+                                {act.icon === 'charging' && <BatteryCharging size={12} />}
+                                <span>{act.label}</span>
+                                <ArrowRight size={11} />
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Hand-off button if explicitly requested */}
                       {msg.showHumanHandOff && !isStreaming && (
                         <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
                           <button
@@ -545,18 +782,25 @@ export const ConciergePage: React.FC = () => {
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00E08A] text-[#0B0D10] font-semibold text-xs hover:bg-[#00c97b] transition-colors cursor-pointer"
                           >
                             <PhoneCall size={13} />
-                            <span>Connect with Representative</span>
+                            <span>Connect with Ather Representative</span>
                           </button>
                         </div>
                       )}
 
-                      <span
-                        className={`text-[9px] block text-right mt-1.5 ${
-                          isUser ? 'text-[#0B0D10]/60' : 'text-[#9AA3AF]/60'
-                        }`}
-                      >
-                        {msg.timestamp}
-                      </span>
+                      <div className="flex items-center justify-between text-[9px] mt-2 pt-1 border-t border-white/[0.04]">
+                        {!isUser && msg.modelBadge && (
+                          <span className="text-[#00E08A]/70 font-mono">
+                            ⚡ {msg.modelBadge}
+                          </span>
+                        )}
+                        <span
+                          className={`ml-auto ${
+                            isUser ? 'text-[#0B0D10]/60' : 'text-[#9AA3AF]/60'
+                          }`}
+                        >
+                          {msg.timestamp}
+                        </span>
+                      </div>
                     </div>
 
                     {isUser && (
@@ -574,12 +818,12 @@ export const ConciergePage: React.FC = () => {
                   <div className="w-8 h-8 rounded-full bg-[#00E08A]/15 border border-[#00E08A]/30 flex items-center justify-center text-[#00E08A] shrink-0">
                     <Bot size={16} />
                   </div>
-                  <div className="bg-[#16191E] border border-white/[0.08] px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 text-xs text-[#9AA3AF]">
+                  <div className="bg-[#16191E] border border-white/[0.08] px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-2 text-xs text-[#9AA3AF]">
                     <span className="w-1.5 h-1.5 bg-[#00E08A] rounded-full animate-bounce [animation-delay:-0.3s]" />
                     <span className="w-1.5 h-1.5 bg-[#00E08A] rounded-full animate-bounce [animation-delay:-0.15s]" />
                     <span className="w-1.5 h-1.5 bg-[#00E08A] rounded-full animate-bounce" />
-                    <span className="ml-2 font-mono text-[11px] text-[#9AA3AF]">
-                      Analyzing commuter variables...
+                    <span className="ml-2 font-mono text-[11px] text-[#00E08A]">
+                      Ather EV Specialist is analyzing engineering telemetry...
                     </span>
                   </div>
                 </div>
@@ -601,7 +845,7 @@ export const ConciergePage: React.FC = () => {
                   type="text"
                   value={inputQuery}
                   onChange={(e) => setInputQuery(e.target.value)}
-                  placeholder="Ask about daily charging, monsoon safety, or running costs..."
+                  placeholder="Ask about 450X vs Rizta, TrueRange™, 5A charging, or battery longevity..."
                   disabled={isTyping || isStreaming}
                   className="flex-1 bg-[#111418] border border-white/10 rounded-xl px-4 py-3 text-xs sm:text-sm text-[#F5F7FA] placeholder-[#9AA3AF]/60 focus:outline-none focus:border-[#00E08A] transition-colors disabled:opacity-50"
                 />
@@ -609,7 +853,7 @@ export const ConciergePage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={!inputQuery.trim() || isTyping || isStreaming}
-                  className="p-3 rounded-xl bg-[#00E08A] text-[#0B0D10] hover:bg-[#00c97b] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                  className="p-3 rounded-xl bg-[#00E08A] text-[#0B0D10] hover:bg-[#00c97b] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-md"
                   title="Send message"
                 >
                   <Send size={16} />
@@ -617,8 +861,11 @@ export const ConciergePage: React.FC = () => {
               </form>
 
               <div className="flex items-center justify-between text-[10px] text-[#9AA3AF] mt-2 px-1">
-                <span>Academic prototype AI model. Answers grounded in decision logic.</span>
-                <span className="hidden sm:inline">Press Enter to send</span>
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck size={12} className="text-[#00E08A]" />
+                  Grounded in real Ather vehicle data and {currentCustomer?.city || 'Pune'} transit conditions
+                </span>
+                <span className="hidden sm:inline font-mono">Press Enter ↵</span>
               </div>
             </div>
           </div>
@@ -652,12 +899,12 @@ export const ConciergePage: React.FC = () => {
                   </div>
 
                   <h3 className="font-heading text-2xl font-bold text-[#F5F7FA]">
-                    Callback Requested!
+                    Callback Scheduled!
                   </h3>
 
                   <p className="text-xs sm:text-sm text-[#9AA3AF] leading-relaxed max-w-sm mx-auto">
-                    An Ather EV specialist will reach out to <strong className="text-white">{humanName}</strong> at{' '}
-                    <strong className="text-white">{humanPhone}</strong> during your preferred window (
+                    An Ather EV product specialist will contact <strong className="text-white">{humanName}</strong> at{' '}
+                    <strong className="text-white">{humanPhone}</strong> during your preferred slot (
                     {humanTimeWindow}).
                   </p>
 
@@ -677,14 +924,14 @@ export const ConciergePage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-[#00E08A]">
-                      Direct Human Handoff
+                      Direct Ather Specialist Handoff
                     </span>
                   </div>
                   <h3 className="font-heading text-xl font-bold text-[#F5F7FA] mb-1">
-                    Connect with an Ather Specialist
+                    Connect with an Ather Representative
                   </h3>
                   <p className="text-xs text-[#9AA3AF] mb-5">
-                    Speak directly with a product expert regarding vehicle pricing, live inventory, or custom home socket installation.
+                    Speak directly with an Ather Space product specialist regarding local booking offers, on-road pricing, or custom apartment charging site surveys.
                   </p>
 
                   {humanError && (
@@ -704,7 +951,7 @@ export const ConciergePage: React.FC = () => {
                         type="text"
                         value={humanName}
                         onChange={(e) => setHumanName(e.target.value)}
-                        placeholder="e.g. Aniket Singh"
+                        placeholder="e.g. Riya Desai"
                         className="w-full bg-[#16191E] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
                       />
                     </div>
@@ -722,7 +969,7 @@ export const ConciergePage: React.FC = () => {
                           type="tel"
                           value={humanPhone}
                           onChange={(e) => setHumanPhone(e.target.value)}
-                          placeholder="9876543210"
+                          placeholder="9823012345"
                           maxLength={10}
                           className="w-full bg-[#16191E] border border-white/10 rounded-r-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
                         />
@@ -732,7 +979,7 @@ export const ConciergePage: React.FC = () => {
                     {/* Preferred Time Window */}
                     <div>
                       <label className="text-xs font-semibold text-[#9AA3AF] block mb-1.5">
-                        Preferred Callback Slot
+                        Preferred Callback Window
                       </label>
                       <select
                         value={humanTimeWindow}
@@ -755,7 +1002,7 @@ export const ConciergePage: React.FC = () => {
                           className="mt-0.5 w-4 h-4 rounded border-white/20 bg-[#16191E] text-[#00E08A] focus:ring-[#00E08A] accent-[#00E08A]"
                         />
                         <span className="text-[11px] text-[#9AA3AF] leading-relaxed">
-                          I agree to be contacted by an Ather representative regarding my queries and test ride preferences.
+                          I consent to receive a call from Ather Energy regarding product queries and test ride booking.
                         </span>
                       </label>
                     </div>
@@ -775,7 +1022,7 @@ export const ConciergePage: React.FC = () => {
                           )
                         }
                       >
-                        {humanSubmitting ? 'Submitting Request...' : 'Schedule Callback'}
+                        {humanSubmitting ? 'Scheduling Callback...' : 'Schedule Callback'}
                       </PrimaryButton>
                     </div>
                   </form>

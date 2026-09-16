@@ -43,6 +43,14 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
     // Attach to global window object for any external components that need programmatic scroll
     (window as any).__lenis = lenis;
 
+    // Auto-resize on content changes so scroll limit is never outdated
+    const resizeObserver = new ResizeObserver(() => {
+      lenis.resize();
+    });
+    if (document.body) {
+      resizeObserver.observe(document.body);
+    }
+
     let rafId: number;
     const raf = (time: number) => {
       lenis.raf(time);
@@ -51,6 +59,7 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
     rafId = requestAnimationFrame(raf);
 
     return () => {
+      resizeObserver.disconnect();
       cancelAnimationFrame(rafId);
       lenis.destroy();
       lenisRef.current = null;
@@ -58,10 +67,17 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
     };
   }, [prefersReduced]);
 
-  // Route change scroll reset
+  // Route change scroll reset and bound recalculation
   useEffect(() => {
     if (lenisRef.current) {
       lenisRef.current.scrollTo(0, { immediate: true });
+      lenisRef.current.resize();
+      const t1 = setTimeout(() => lenisRef.current?.resize(), 100);
+      const t2 = setTimeout(() => lenisRef.current?.resize(), 400);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     } else {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }

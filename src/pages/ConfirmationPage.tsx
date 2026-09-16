@@ -21,6 +21,9 @@ import {
   Download,
   Share2,
   Sparkles,
+  RefreshCw,
+  Coins,
+  CheckCircle2,
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
@@ -160,9 +163,16 @@ export const ConfirmationPage: React.FC = () => {
                 Reservation Summary
               </h2>
             </div>
-            <span className="text-xs font-mono text-[#00E08A] bg-[#00E08A]/10 border border-[#00E08A]/30 px-3 py-1 rounded-full">
-              Status: Scheduled
-            </span>
+            <div className="flex items-center gap-2">
+              {booking.rideType === 'Doorstep VIP' && (
+                <span className="text-[11px] font-mono font-bold text-[#00E08A] bg-[#00E08A]/15 border border-[#00E08A]/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Home size={11} /> VIP Doorstep
+                </span>
+              )}
+              <span className="text-xs font-mono text-[#00E08A] bg-[#00E08A]/10 border border-[#00E08A]/30 px-3 py-1 rounded-full">
+                Status: Scheduled
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -188,9 +198,11 @@ export const ConfirmationPage: React.FC = () => {
               </span>
             </div>
 
-            {/* City & Experience Center */}
+            {/* City & Experience Center / Doorstep Address */}
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-              <span className="text-[#9AA3AF] block mb-1">Location / Space</span>
+              <span className="text-[#9AA3AF] block mb-1">
+                {booking.rideType === 'Doorstep VIP' ? 'VIP Delivery Destination' : 'Location / Space'}
+              </span>
               <span className="font-semibold text-sm text-[#F5F7FA] flex items-center gap-1.5">
                 <MapPin size={13} className="text-[#00E08A]" /> {booking.city}
               </span>
@@ -210,6 +222,76 @@ export const ConfirmationPage: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Guaranteed 7-Day Exchange Valuation Certificate (If customer added an exchange) */}
+          {booking.exchangeVehicle && (
+            <div className="mt-5 p-4 rounded-2xl bg-gradient-to-r from-[#00E08A]/15 via-[#00E08A]/5 to-transparent border border-[#00E08A]/40 text-xs">
+              <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-[#00E08A]/20">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#00E08A]/20 flex items-center justify-center text-[#00E08A]">
+                    <RefreshCw size={14} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-[#00E08A] block">
+                      Ather Switch & Save Certificate
+                    </span>
+                    <h3 className="font-heading font-bold text-sm text-white">
+                      7-Day Guaranteed Trade-In Valuation Locked
+                    </h3>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-mono text-[#00E08A] bg-[#00E08A]/20 border border-[#00E08A]/40 px-2.5 py-1 rounded-full shrink-0">
+                  Ref: TR-{booking.bookingRef}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-[10px] text-[#9AA3AF] block">Current Scooter</span>
+                  <span className="font-semibold text-white truncate block">
+                    {booking.exchangeVehicle.modelName}
+                  </span>
+                  <span className="text-[10px] text-[#9AA3AF]">
+                    Year: {booking.exchangeVehicle.year} · {booking.exchangeVehicle.condition}
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-[10px] text-[#9AA3AF] block">Base Trade-in Value</span>
+                  <span className="font-semibold text-white block">
+                    ₹{booking.exchangeVehicle.tradeInCredit.toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[10px] text-[#9AA3AF]">Doorstep Instant Appraisal</span>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-[10px] text-[#9AA3AF] block">Ather Switch Bonus</span>
+                  <span className="font-semibold text-[#00E08A] block">
+                    +₹{(booking.exchangeVehicle.switchBonus || 10000).toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[10px] text-[#00E08A]">Limited-time Academic Offer</span>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-[#00E08A]/20 border border-[#00E08A]/40">
+                  <span className="text-[10px] text-[#00E08A] font-bold uppercase tracking-wider block">
+                    Total Upfront Offset
+                  </span>
+                  <span className="font-heading font-extrabold text-base text-white block">
+                    ₹{(booking.exchangeVehicle.tradeInCredit + (booking.exchangeVehicle.switchBonus || 10000)).toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[9px] text-white/80">Deducted from Ather on-road price</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-2 text-[11px] text-[#9AA3AF]">
+                <div className="flex items-center gap-1.5 text-[#00E08A]">
+                  <CheckCircle2 size={13} />
+                  <span>Our specialist will inspect and confirm this valuation during your test ride.</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Checklist reminder */}
           <div className="mt-6 pt-5 border-t border-white/[0.06]">

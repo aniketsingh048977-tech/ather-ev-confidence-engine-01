@@ -234,7 +234,7 @@ export const SavingsPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full relative overflow-hidden bg-[#0B0D10] text-[#F5F7FA] pb-24">
+    <div className="w-full relative overflow-x-clip bg-[#0B0D10] text-[#F5F7FA] pb-24">
       {/* Subtle emerald atmospheric background glow */}
       <div
         className="absolute top-20 right-1/4 w-[600px] h-[500px] pointer-events-none rounded-full blur-[150px] opacity-20 bg-[#00E08A]/30"
@@ -657,8 +657,9 @@ export const SavingsPage: React.FC = () => {
           </MotionItem>
 
           {/* 4. RANGE SECTION: "CAN I MAKE IT?" */}
-          <MotionItem className="mt-12" id="range-simulator">
-            <div className="bg-[#111418] border border-white/[0.08] rounded-[24px] p-6 sm:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
+          <div id="range-simulator">
+            <MotionItem className="mt-12">
+              <div className="bg-[#111418] border border-white/[0.08] rounded-[24px] p-6 sm:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
               {/* Header */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/[0.06]">
                 <div>
@@ -854,6 +855,7 @@ export const SavingsPage: React.FC = () => {
               </div>
             </div>
           </MotionItem>
+        </div>
 
           {/* 5. BOTTOM NAVIGATION BAR */}
           <MotionItem className="mt-12">

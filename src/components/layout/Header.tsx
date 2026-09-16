@@ -5,10 +5,11 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ArrowUpRight, ShieldAlert } from 'lucide-react';
+import { Menu, X, ArrowUpRight, ShieldAlert, RefreshCw } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { PrimaryButton } from '../ui/PrimaryButton';
 import { AuroraBackground } from '../motion/living-backgrounds/AuroraBackground';
+import { SwitchModal } from '../conversion/SwitchModal';
 
 const NAV_LINKS = [
   { label: 'How It Works', path: '/how-it-works' },
@@ -20,12 +21,14 @@ const NAV_LINKS = [
 
 export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [switchModalOpen, setSwitchModalOpen] = useState(false);
   const location = useLocation();
 
   const closeMenu = () => setMobileMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-[16px] bg-[#0B0D10]/75 border-b border-white/[0.06] transition-colors duration-200 overflow-hidden">
+    <>
+      <header className="sticky top-0 z-50 w-full backdrop-blur-[16px] bg-[#0B0D10]/75 border-b border-white/[0.06] transition-colors duration-200 overflow-hidden">
       {/* Faint Aurora Background behind header glass */}
       <AuroraBackground faint isMobileCompact className="opacity-40" />
 
@@ -79,8 +82,17 @@ export const Header: React.FC = () => {
           })}
         </nav>
 
-        {/* Right: Actions & Admin Link */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Right: Actions, Switch CTA & Admin Link */}
+        <div className="hidden md:flex items-center gap-3">
+          {/* Conversion Booster: Exchange & Switch Page Link */}
+          <Link
+            to="/switch"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#00E08A]/10 border border-[#00E08A]/35 text-[#00E08A] hover:bg-[#00E08A]/20 text-xs font-semibold tracking-wide transition-all shadow-[0_0_12px_rgba(0,224,138,0.15)] cursor-pointer"
+          >
+            <RefreshCw size={12} className="text-[#00E08A]" />
+            <span>Switch & Save (+₹10k)</span>
+          </Link>
+
           <Link
             to="/admin"
             className={`text-xs uppercase tracking-wider font-semibold px-2.5 py-1.5 rounded transition-colors ${
@@ -99,9 +111,14 @@ export const Header: React.FC = () => {
 
         {/* Mobile controls */}
         <div className="flex items-center gap-2 md:hidden">
-          <div className="sm:hidden">
-            <Badge variant="ACADEMIC PROTOTYPE" label="ACADEMIC" />
-          </div>
+          <button
+            type="button"
+            onClick={() => setSwitchModalOpen(true)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#00E08A]/10 border border-[#00E08A]/30 text-[#00E08A] text-[11px] font-bold"
+          >
+            <RefreshCw size={11} />
+            <span>Switch (+₹10k)</span>
+          </button>
 
           <button
             onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -120,6 +137,23 @@ export const Header: React.FC = () => {
             <Badge variant="ACADEMIC PROTOTYPE" />
             <span className="text-[11px] text-[#9AA3AF]">Phase 1 Design System</span>
           </div>
+
+          {/* Mobile Switch Banner */}
+          <Link
+            to="/switch"
+            onClick={closeMenu}
+            className="w-full p-3 rounded-xl bg-gradient-to-r from-[#00E08A]/15 to-transparent border border-[#00E08A]/30 flex items-center justify-between text-left text-white cursor-pointer"
+          >
+            <div>
+              <div className="text-xs font-bold text-[#00E08A] flex items-center gap-1">
+                <RefreshCw size={12} /> Exchange Petrol Scooter
+              </div>
+              <div className="text-[11px] text-[#9AA3AF]">Get up to ₹55,000 + ₹10,000 bonus</div>
+            </div>
+            <span className="text-xs font-bold text-[#00E08A] bg-[#00E08A]/10 px-2.5 py-1 rounded-md">
+              Evaluate
+            </span>
+          </Link>
 
           <nav className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => {
@@ -156,5 +190,9 @@ export const Header: React.FC = () => {
         </div>
       )}
     </header>
-  );
+
+    {/* Switch & Save Modal */}
+    <SwitchModal isOpen={switchModalOpen} onClose={() => setSwitchModalOpen(false)} />
+  </>
+);
 };

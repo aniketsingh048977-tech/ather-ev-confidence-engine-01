@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useId } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   Calendar,
@@ -22,6 +22,10 @@ import {
   Compass,
   FileText,
   BadgeCheck,
+  RefreshCw,
+  Home,
+  Building2,
+  Coins,
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
@@ -29,6 +33,11 @@ import { useAppState } from '../context/AppContext';
 import { City, PrimaryConcern, TestRideBooking } from '../types';
 import { usePresentation } from '../context/PresentationContext';
 import { RIYA_DESAI_BOOKING } from '../data/demoCustomerRiya';
+import {
+  POPULAR_PETROL_MODELS,
+  calculateTradeInValue,
+  ATHER_SWITCH_BONUS,
+} from '../data/petrolExchangeData';
 
 const CITIES: City[] = ['Bengaluru', 'Pune', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad'];
 
@@ -48,6 +57,17 @@ interface ChecklistItem {
 
 export const TestRidePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeState = (location.state || {}) as {
+    fromSwitchEngine?: boolean;
+    exchangeVehicle?: any;
+    netMonthlySavings?: number;
+    tradeInValue?: number;
+    totalExchangeBenefit?: number;
+    targetModel?: string;
+    rideType?: 'Doorstep VIP' | 'Ather Space Showroom';
+  };
+
   const {
     currentCustomer,
     quizAnswers,
@@ -83,7 +103,8 @@ export const TestRidePage: React.FC = () => {
   const [preferredDate, setPreferredDate] = useState(tomorrowStr);
   const [preferredTimeSlot, setPreferredTimeSlot] = useState(TIME_SLOTS[0]);
   const [recommendedCategory] = useState(
-    riderProfile?.suggestedAtherModel ||
+    routeState.targetModel ||
+      riderProfile?.suggestedAtherModel ||
       riderProfile?.archetype ||
       'Ather 450X Series [VERIFIED ATHER PRODUCT DATA REQUIRED]'
   );
@@ -91,6 +112,24 @@ export const TestRidePage: React.FC = () => {
     quizAnswers.biggestConcern || 'Range'
   );
   const [consent, setConsent] = useState(false);
+
+  // VIP Ride & Exchange Trade-in States
+  const [rideType, setRideType] = useState<'Doorstep VIP' | 'Ather Space Showroom'>(
+    routeState.rideType === 'Ather Space Showroom' ? 'Ather Space Showroom' : 'Doorstep VIP'
+  );
+  const [doorstepAddress, setDoorstepAddress] = useState('');
+  const [hasExchange, setHasExchange] = useState<boolean>(
+    Boolean(routeState.fromSwitchEngine || routeState.exchangeVehicle)
+  );
+  const [selectedPetrolId, setSelectedPetrolId] = useState<string>(
+    routeState.exchangeVehicle?.scooterId || POPULAR_PETROL_MODELS[0].id
+  );
+  const [exchangeYear, setExchangeYear] = useState<number>(
+    routeState.exchangeVehicle?.manufacturingYear || 2021
+  );
+  const [exchangeCondition, setExchangeCondition] = useState<'good' | 'average' | 'poor'>(
+    (routeState.exchangeVehicle?.condition as any) || 'good'
+  );
 
   // Errors & Loading
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -310,12 +349,39 @@ export const TestRidePage: React.FC = () => {
     setErrors({});
     setIsSubmitting(true);
 
-    // Scoring: +15 (test ride intent) + 10 (test ride started) = +25
-    const updatedLeadScore = Math.min(100, leadScore + 25);
+    // Dynamic trade-in evaluation
+    const petrolModelObj = POPULAR_PETROL_MODELS.find((s) => s.id === selectedPetrolId);
+    const conditionParam: 'good' | 'fair' = exchangeCondition === 'good' ? 'good' : 'fair';
+    const calculatedTradeIn = hasExchange && petrolModelObj
+      ? calculateTradeInValue(petrolModelObj.id, exchangeYear, conditionParam)
+      : 0;
+
+    const exchangeData = hasExchange && petrolModelObj ? {
+      make: petrolModelObj.brand,
+      modelName: `${petrolModelObj.brand} ${petrolModelObj.model}`,
+      year: exchangeYear,
+      tradeInCredit: calculatedTradeIn,
+      condition: exchangeCondition === 'good' ? 'Good' : exchangeCondition === 'average' ? 'Fair' : 'Poor',
+      switchBonus: ATHER_SWITCH_BONUS,
+      lockedExpiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+    } : undefined;
+
+    // Scoring: Base test ride +25, +35 for exchange leads due to high purchase intent
+    const scoreBonus = hasExchange ? 35 : 25;
+    const updatedLeadScore = Math.min(100, leadScore + scoreBonus);
     setLeadScore(updatedLeadScore);
 
     const consentTimestamp = new Date().toISOString();
     const bookingRef = `ATH-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const resolvedExperienceCenter =
+      rideType === 'Doorstep VIP'
+        ? `VIP Doorstep Delivery (${doorstepAddress.trim() || city})`
+        : experienceCenter;
 
     // 1. Add Test Ride to Context
     const createdRide = addTestRide({
@@ -327,10 +393,12 @@ export const TestRidePage: React.FC = () => {
       preferredTimeSlot,
       status: 'Scheduled',
       modelInterest: recommendedCategory,
-      experienceCenter,
+      experienceCenter: resolvedExperienceCenter,
       bookingRef,
       primaryConcern,
       consentTimestamp,
+      rideType,
+      exchangeVehicle: exchangeData,
     });
 
     // 2. Log test_ride_started telemetry
@@ -344,6 +412,9 @@ export const TestRidePage: React.FC = () => {
       primaryConcern,
       leadScore: updatedLeadScore,
       consentTimestamp,
+      rideType,
+      hasExchange,
+      exchangeEstimate: calculatedTradeIn,
     });
 
     // 3. Update or Add Demo Lead in CRM State
@@ -367,7 +438,7 @@ export const TestRidePage: React.FC = () => {
         leadScore: updatedLeadScore,
         journeyStage: 'Test Ride Booked',
         source: 'Direct',
-        campaignName: 'Academic EV Confidence Engine',
+        campaignName: hasExchange ? 'Petrol-to-Ather Switch Campaign' : 'Academic EV Confidence Engine',
         testRideStatus: 'Scheduled',
         lastActivity: consentTimestamp,
         tag: 'DEMO CUSTOMER',
@@ -384,6 +455,9 @@ export const TestRidePage: React.FC = () => {
           state: {
             booking: createdRide,
             bookingRef,
+            exchangeData,
+            rideType,
+            doorstepAddress: doorstepAddress.trim(),
           },
         });
       }
@@ -539,24 +613,96 @@ export const TestRidePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Row 3: Experience Center */}
+              {/* Conversion Booster: Test Ride Format Selector */}
               <div>
                 <label className="text-xs font-semibold text-[#9AA3AF] block mb-1.5">
-                  Preferred Experience Center
+                  How would you prefer to take the test ride? *
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={experienceCenter}
-                    onChange={(e) => setExperienceCenter(e.target.value)}
-                    className="w-full bg-[#16191E] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
-                  />
-                  <MapPin size={14} className="absolute right-3 top-3 text-[#00E08A] pointer-events-none" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setRideType('Doorstep VIP')}
+                    className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                      rideType === 'Doorstep VIP'
+                        ? 'bg-[#00E08A]/10 border-[#00E08A] text-white shadow-[0_0_15px_rgba(0,224,138,0.2)]'
+                        : 'bg-[#16191E] border-white/10 text-[#9AA3AF] hover:border-white/20'
+                    }`}
+                  >
+                    <Home size={16} className={rideType === 'Doorstep VIP' ? 'text-[#00E08A] shrink-0 mt-0.5' : 'shrink-0 mt-0.5'} />
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>VIP Doorstep Test Ride</span>
+                        <span className="text-[9px] bg-[#00E08A]/20 text-[#00E08A] px-1.5 py-0.2 rounded font-bold uppercase">
+                          Popular
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#9AA3AF] mt-0.5 leading-snug">
+                        Specialist brings Ather to your home or office.
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRideType('Ather Space Showroom')}
+                    className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                      rideType === 'Ather Space Showroom'
+                        ? 'bg-[#00E08A]/10 border-[#00E08A] text-white shadow-[0_0_15px_rgba(0,224,138,0.2)]'
+                        : 'bg-[#16191E] border-white/10 text-[#9AA3AF] hover:border-white/20'
+                    }`}
+                  >
+                    <Building2 size={16} className={rideType === 'Ather Space Showroom' ? 'text-[#00E08A] shrink-0 mt-0.5' : 'shrink-0 mt-0.5'} />
+                    <div>
+                      <div className="text-xs font-bold text-white">
+                        Ather Space Experience Center
+                      </div>
+                      <p className="text-[11px] text-[#9AA3AF] mt-0.5 leading-snug">
+                        Visit our experience studio with tea and full demo.
+                      </p>
+                    </div>
+                  </button>
                 </div>
-                <p className="text-[10px] text-[#9AA3AF]/70 mt-1 font-mono">
-                  Location verification active · GPS mapping included in confirmation pass
-                </p>
               </div>
+
+              {/* Conditional: Doorstep Delivery Address vs Experience Center */}
+              {rideType === 'Doorstep VIP' ? (
+                <div>
+                  <label className="text-xs font-semibold text-[#9AA3AF] block mb-1.5">
+                    Doorstep Delivery Address (Home or Office) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={doorstepAddress}
+                      onChange={(e) => setDoorstepAddress(e.target.value)}
+                      placeholder="Flat / House No., Apartment, Street, Landmark"
+                      className="w-full bg-[#16191E] border border-[#00E08A]/40 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
+                    />
+                    <Home size={14} className="absolute right-3 top-3 text-[#00E08A] pointer-events-none" />
+                  </div>
+                  <p className="text-[10px] text-[#00E08A] mt-1 font-mono flex items-center gap-1">
+                    <CheckCircle2 size={11} /> Ather test ride van dispatched directly to your location
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-semibold text-[#9AA3AF] block mb-1.5">
+                    Preferred Experience Center
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={experienceCenter}
+                      onChange={(e) => setExperienceCenter(e.target.value)}
+                      className="w-full bg-[#16191E] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
+                    />
+                    <MapPin size={14} className="absolute right-3 top-3 text-[#00E08A] pointer-events-none" />
+                  </div>
+                  <p className="text-[10px] text-[#9AA3AF]/70 mt-1 font-mono">
+                    Location verification active · GPS mapping included in confirmation pass
+                  </p>
+                </div>
+              )}
 
               {/* Row 4: Preferred Date & Time Slot */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -628,6 +774,130 @@ export const TestRidePage: React.FC = () => {
                     <option value="Pillion / Family">Pillion Comfort & Underseat Storage</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Conversion Booster: Petrol Scooter Trade-In & Switch Bonus */}
+              <div className="rounded-2xl border border-white/[0.08] bg-[#16191E]/70 p-4 sm:p-5 transition-all">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#00E08A]/10 border border-[#00E08A]/30 flex items-center justify-center text-[#00E08A]">
+                      <RefreshCw size={15} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-heading font-bold text-[#F5F7FA] flex items-center gap-2">
+                        <span>Exchange an Old Petrol Scooter</span>
+                        <span className="text-[10px] font-bold bg-[#00E08A]/20 text-[#00E08A] px-2 py-0.5 rounded-full border border-[#00E08A]/30">
+                          +₹10,000 Bonus
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-[#9AA3AF]">
+                        Trade in your Activa, Jupiter, or Access for immediate upfront discount
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hasExchange}
+                      onChange={(e) => setHasExchange(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00E08A]"></div>
+                  </label>
+                </div>
+
+                {/* Expanded Exchange Evaluation UI */}
+                {hasExchange && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-4 pt-4 border-t border-white/[0.06] space-y-3"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {/* Scooter Model */}
+                      <div>
+                        <label className="text-[10px] uppercase tracking-wider font-semibold text-[#9AA3AF] block mb-1">
+                          Current Scooter
+                        </label>
+                        <select
+                          value={selectedPetrolId}
+                          onChange={(e) => setSelectedPetrolId(e.target.value)}
+                          className="w-full bg-[#111418] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
+                        >
+                          {POPULAR_PETROL_MODELS.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.brand} {s.model}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Year */}
+                      <div>
+                        <label className="text-[10px] uppercase tracking-wider font-semibold text-[#9AA3AF] block mb-1">
+                          Mfg Year
+                        </label>
+                        <select
+                          value={exchangeYear}
+                          onChange={(e) => setExchangeYear(Number(e.target.value))}
+                          className="w-full bg-[#111418] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
+                        >
+                          {[2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016].map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Condition */}
+                      <div>
+                        <label className="text-[10px] uppercase tracking-wider font-semibold text-[#9AA3AF] block mb-1">
+                          Condition
+                        </label>
+                        <select
+                          value={exchangeCondition}
+                          onChange={(e) => setExchangeCondition(e.target.value as any)}
+                          className="w-full bg-[#111418] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
+                        >
+                          <option value="good">Good (Clean, Running)</option>
+                          <option value="average">Average (Minor Scratches)</option>
+                          <option value="poor">Fair (Requires Service)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Trade-in Value Bar */}
+                    {(() => {
+                      const cur = POPULAR_PETROL_MODELS.find((s) => s.id === selectedPetrolId) || POPULAR_PETROL_MODELS[0];
+                      const cond: 'good' | 'fair' = exchangeCondition === 'good' ? 'good' : 'fair';
+                      const estVal = calculateTradeInValue(cur.id, exchangeYear, cond);
+                      const totalOff = estVal + ATHER_SWITCH_BONUS;
+
+                      return (
+                        <div className="p-3 rounded-xl bg-gradient-to-r from-[#00E08A]/10 via-[#00E08A]/5 to-transparent border border-[#00E08A]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Coins size={16} className="text-[#00E08A] shrink-0" />
+                            <div>
+                              <span className="text-xs text-white font-semibold block">
+                                Total Trade-in Offset: ₹{totalOff.toLocaleString('en-IN')}
+                              </span>
+                              <span className="text-[10px] text-[#9AA3AF]">
+                                ₹{estVal.toLocaleString('en-IN')} (Estimated Value) + ₹{ATHER_SWITCH_BONUS.toLocaleString('en-IN')} (Ather Switch Bonus)
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#00E08A] bg-[#00E08A]/10 px-2 py-1 rounded-md border border-[#00E08A]/20 self-start sm:self-auto">
+                            <ShieldCheck size={12} />
+                            <span>7-Day Price Lock</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </motion.div>
+                )}
               </div>
 
               {/* Mandatory Consent Checkbox */}
