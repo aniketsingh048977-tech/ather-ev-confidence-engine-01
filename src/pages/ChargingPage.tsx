@@ -30,6 +30,7 @@ import { Card } from '../components/ui/Card';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { SecondaryButton } from '../components/ui/SecondaryButton';
 import { MotionSection, MotionItem } from '../components/motion/MotionSection';
+import { CommuteTwinSimulator } from '../components/telemetry/CommuteTwinSimulator';
 import { useAppState } from '../context/AppContext';
 import { usePresentation } from '../context/PresentationContext';
 
@@ -797,7 +798,14 @@ export const ChargingPage: React.FC = () => {
             </AnimatePresence>
           </MotionItem>
 
-          {/* 4. BOTTOM CONTINUATION HUB */}
+          {/* 4. COMMUTE TWIN ROUTE SIMULATOR */}
+          <div id="commute-twin" className="mt-12">
+            <MotionItem>
+              <CommuteTwinSimulator />
+            </MotionItem>
+          </div>
+
+          {/* 5. BOTTOM CONTINUATION HUB */}
           <MotionItem className="mt-12">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-2xl bg-[#111418] border border-white/[0.08]">
               <div>

@@ -40,6 +40,8 @@ import { Card } from '../components/ui/Card';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { SecondaryButton } from '../components/ui/SecondaryButton';
 import { MotionSection, MotionItem } from '../components/motion/MotionSection';
+import { PetrolToSipTimeMachine } from '../components/wealth/PetrolToSipTimeMachine';
+import { CommuteTwinSimulator } from '../components/telemetry/CommuteTwinSimulator';
 import { useAppState } from '../context/AppContext';
 import { usePresentation } from '../context/PresentationContext';
 
@@ -656,208 +658,19 @@ export const SavingsPage: React.FC = () => {
             </div>
           </MotionItem>
 
-          {/* 4. RANGE SECTION: "CAN I MAKE IT?" */}
-          <div id="range-simulator">
-            <MotionItem className="mt-12">
-              <div className="bg-[#111418] border border-white/[0.08] rounded-[24px] p-6 sm:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
-              {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/[0.06]">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00E08A]">
-                      Range Feasibility Simulator
-                    </span>
-                  </div>
-                  <h2 className="font-heading text-2xl sm:text-3xl font-semibold text-[#F5F7FA]">
-                    Can I Make It?
-                  </h2>
-                  <p className="text-xs sm:text-sm text-[#9AA3AF] mt-1 max-w-xl">
-                    Simulate your real daily door-to-door transit route to verify single-charge battery safety margins.
-                  </p>
-                </div>
-
-                <Badge
-                  variant="ACADEMIC PROTOTYPE"
-                  label="DEMO ROUTE MODEL. MAP/API INTEGRATION REQUIRED FOR PRODUCTION"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Inputs Left (lg:col-span-7) */}
-                <div className="lg:col-span-7 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Start Text */}
-                    <div>
-                      <label className="text-xs font-semibold text-[#9AA3AF] block mb-1.5">
-                        Start Point
-                      </label>
-                      <div className="relative">
-                        <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#00E08A]" />
-                        <input
-                          type="text"
-                          value={routeStart}
-                          onChange={(e) => setRouteStart(e.target.value)}
-                          placeholder="e.g. Home, Indiranagar"
-                          className="w-full bg-[#16191E] border border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-xs sm:text-sm text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Destination Text */}
-                    <div>
-                      <label className="text-xs font-semibold text-[#9AA3AF] block mb-1.5">
-                        Destination
-                      </label>
-                      <div className="relative">
-                        <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400" />
-                        <input
-                          type="text"
-                          value={routeDestination}
-                          onChange={(e) => setRouteDestination(e.target.value)}
-                          placeholder="e.g. Office, Manyata Tech Park"
-                          className="w-full bg-[#16191E] border border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-xs sm:text-sm text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Optional Stop */}
-                  <div>
-                    <label className="text-xs font-semibold text-[#9AA3AF] block mb-1.5">
-                      Optional Stop / Errand (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={routeStop}
-                      onChange={(e) => setRouteStop(e.target.value)}
-                      placeholder="e.g. Supermarket, School Pickup, Gym"
-                      className="w-full bg-[#16191E] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F7FA] focus:outline-none focus:border-[#00E08A]"
-                    />
-                  </div>
-
-                  {/* Sliders: One-Way Distance & Trips per Day */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                    {/* One-way distance km */}
-                    <div className="p-4 rounded-xl bg-[#16191E] border border-white/[0.06]">
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-xs font-medium text-[#F5F7FA]">
-                          One-way distance:
-                        </label>
-                        <span className="font-mono text-xs font-bold text-[#00E08A]">
-                          {oneWayKm} km
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={2}
-                        max={60}
-                        step={1}
-                        value={oneWayKm}
-                        onChange={(e) => setOneWayKm(Number(e.target.value))}
-                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00E08A]"
-                      />
-                    </div>
-
-                    {/* Trips per Day */}
-                    <div className="p-4 rounded-xl bg-[#16191E] border border-white/[0.06]">
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-xs font-medium text-[#F5F7FA]">
-                          Trips per day:
-                        </label>
-                        <span className="font-mono text-xs font-bold text-[#00E08A]">
-                          {tripsPerDay} {tripsPerDay === 2 ? '(Roundtrip)' : 'trips'}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4].map((num) => (
-                          <button
-                            key={num}
-                            type="button"
-                            onClick={() => setTripsPerDay(num)}
-                            className={`flex-1 py-1 rounded text-xs font-mono font-semibold border transition-colors ${
-                              tripsPerDay === num
-                                ? 'border-[#00E08A] bg-[#00E08A]/15 text-[#00E08A]'
-                                : 'border-white/10 bg-white/[0.02] text-[#9AA3AF] hover:border-white/20'
-                            }`}
-                          >
-                            {num}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Outputs Right (lg:col-span-5) */}
-                <div className="lg:col-span-5 bg-[#16191E] border border-white/[0.08] rounded-2xl p-6 flex flex-col justify-between">
-                  <div>
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-[#9AA3AF] block mb-2">
-                      Route Simulation Result
-                    </span>
-
-                    {/* Daily Distance & Energy */}
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                      <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                        <span className="text-[11px] text-[#9AA3AF] block mb-1">
-                          Total Daily Distance
-                        </span>
-                        <div className="font-heading font-bold text-2xl text-[#F5F7FA] tabular-nums">
-                          {dailyDistance} km
-                        </div>
-                      </div>
-
-                      <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                        <span className="text-[11px] text-[#9AA3AF] block mb-1">
-                          Estimated Energy
-                        </span>
-                        <div className="font-heading font-bold text-2xl text-[#00E08A] tabular-nums">
-                          {estimatedDailyEnergy} <span className="text-xs text-[#9AA3AF]">kWh</span>
-                        </div>
-                        <span className="text-[10px] text-[#9AA3AF]">
-                          ~₹{dailyEvCost} daily power
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Confidence Pill */}
-                    <div className="mb-6">
-                      <span className="text-[11px] uppercase tracking-wider font-semibold text-[#9AA3AF] block mb-2">
-                        Confidence Evaluation
-                      </span>
-                      <div
-                        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border ${rangeConfidence.color}`}
-                      >
-                        <span className={`w-2 h-2 rounded-full ${rangeConfidence.dotColor} animate-pulse`} />
-                        <span>{rangeConfidence.level} CONFIDENCE</span>
-                      </div>
-
-                      <p className="text-xs text-[#F5F7FA] font-medium mt-3 leading-relaxed">
-                        {rangeConfidence.summary}
-                      </p>
-                      <p className="text-[11px] text-[#9AA3AF] mt-1 leading-relaxed">
-                        {rangeConfidence.details}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Plan My Test Ride Button */}
-                  <div className="pt-4 border-t border-white/[0.06]">
-                    <PrimaryButton
-                      to="/test-ride"
-                      size="md"
-                      className="w-full justify-center"
-                      icon={<ArrowRight size={16} />}
-                    >
-                      Plan My Test Ride
-                    </PrimaryButton>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* 4. PETROL-TO-SIP WEALTH COMPOUNDING TIME MACHINE */}
+          <MotionItem className="mt-12">
+            <PetrolToSipTimeMachine initialMonthlyFuel={Math.round(monthlyDifference)} />
           </MotionItem>
-        </div>
 
-          {/* 5. BOTTOM NAVIGATION BAR */}
+          {/* 5. COMMUTE TWIN TELEMETRY SIMULATOR */}
+          <div id="range-simulator" className="mt-12">
+            <MotionItem>
+              <CommuteTwinSimulator />
+            </MotionItem>
+          </div>
+
+          {/* 6. BOTTOM NAVIGATION BAR */}
           <MotionItem className="mt-12">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-2xl bg-[#111418] border border-white/[0.08]">
               <div>
